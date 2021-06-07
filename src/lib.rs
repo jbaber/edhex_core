@@ -1,7 +1,10 @@
-use ansi_term::Color::Fixed;
 use ansi_term::Color;
+use ansi_term::Color::Fixed;
+use regex::Regex;
+use std::cmp::min;
 use std::fmt;
 use std::num::NonZeroUsize;
+use unicode_segmentation::UnicodeSegmentation;
 
 /* Byte formatting stuff lifted from hexyl */
 pub enum ByteCategory {
@@ -159,6 +162,69 @@ impl fmt::Debug for State {
 
 
 impl State {
+    /// returns index of the byte in the 0-th column of the last row printed
+    pub fn print_bytes(&self, range:(usize, usize)) -> Option<usize> {
+        if self.empty() {
+            return None;
+        }
+
+        let max = self.max_index();
+        if max.is_err() {
+            println!("? ({:?})", max);
+            return None;
+        }
+        let max = max.unwrap();
+
+        let from = range.0;
+        let to = min(max, range.1);
+        if bad_range(&self.all_bytes, (from, to)) {
+        println!("? (Bad range: ({}, {}))", range.0, range.1);
+        return None;
+        }
+
+        let bytes = &self.all_bytes[from..=to];
+        let max_bytes_line_num = max_bytes_line(bytes, self.width);
+        let mut left_col_byte_num = from;
+        for bytes_line_num in 0..=max_bytes_line_num {
+            if bytes_line_num != 0 {
+                left_col_byte_num += usize::from(self.width);
+            }
+            if self.show_byte_numbers {
+                if self.radix == 10 {
+                    print!("{:>5}{}|", left_col_byte_num, self.n_padding);
+                }
+                else {
+                    print!("{:>5x}{}|", left_col_byte_num, self.n_padding);
+                }
+            }
+            let cur_line = bytes_line(bytes, bytes_line_num, self.width);
+            let with_color = cur_line.iter().map(|x| formatted_byte(*x, true))
+                    .collect::<Vec<String>>().join(" ");
+            let sans_color = cur_line.iter().map(|x| formatted_byte(*x, false))
+                    .collect::<Vec<String>>().join(" ");
+            if self.color {
+                print!("{}", with_color);
+            }
+            else {
+                print!("{}", sans_color);
+            }
+            let expected_length = usize::from(self.width) * 3 - 1;
+            for _ in num_graphemes(&sans_color)..expected_length {
+                print!(" ");
+            }
+            // TODO Do this padding stuff format!  Unclear why previous attempts
+            // have failed.
+            if self.show_chars {
+                print!("|   {}", chars_line(bytes, bytes_line_num, self.width,
+                    self.color));
+            }
+            println!();
+            left_col_byte_num = from + bytes_line_num * usize::from(self.width);
+        }
+        Some(left_col_byte_num)
+    }
+
+
     pub fn empty(&self) -> bool {
         self.all_bytes.len() == 0
     }
@@ -180,24 +246,346 @@ impl State {
 
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "At byte {} of {}\n", lino(&self),
+        let mut to_write:String;
+        to_write = format!("At byte {} of {}\n", lino(&self),
                 hex_unless_dec_with_radix(self.all_bytes.len(), self.radix));
         if self.show_byte_numbers {
-            write!(f, "Printing byte numbers in {}\n",
+            to_write += &format!("Printing byte numbers in {}\n",
                 string_from_radix(self.radix));
         };
         if self.show_chars {
-            write!(f, "Printing char representations after bytes\n");
+            to_write += &format!("Printing char representations after bytes\n");
         };
-        write!(f, "Interpreting input numbers as {}\n",
+        to_write += &format!("Interpreting input numbers as {}\n",
                 string_from_radix(self.radix));
-        write!(f, "Printing a newline every {} bytes\n",
+        to_write += &format!("Printing a newline every {} bytes\n",
                 hex_unless_dec_with_radix(usize::from(self.width), self.radix));
         if self.unsaved_changes {
-            write!(f, "Unwritten changes")
+            to_write += &format!("Unwritten changes")
         }
         else {
-            write!(f, "No unwritten changes")
+            to_write += &format!("No unwritten changes")
+        }
+
+        write!(f, "{}", to_write)
+    }
+}
+
+
+pub fn string_from_bytes(bytes:&[u8]) -> String {
+    let mut to_return = "".to_owned();
+    for &byte in bytes {
+        to_return += &padded_byte(byte);
+    }
+    return to_return;
+}
+
+
+pub fn padded_byte(byte:u8) -> String {
+    format!("{:02x}", byte)
+}
+
+
+pub fn index_of_bytes(needle:&[u8], haystack:&[u8], forward:bool) -> Option<usize> {
+    let needle_num_bytes = if needle.len() == 0 {
+        return None;
+    }
+    else {
+        needle.len()
+    };
+
+    if forward {
+        for index in 0..haystack.len() {
+            let range = (index, index + needle_num_bytes - 1);
+
+            if bad_range(&haystack.to_vec(), range) {
+                return None;
+            }
+
+            if &haystack[range.0..=range.1] == needle {
+                return Some(index);
+            }
+        }
+    }
+    else {
+        let max_index = if needle_num_bytes <= haystack.len() {
+            haystack.len() - needle_num_bytes
+        }
+        else {
+            0
+        };
+
+        for index in (0..=max_index).rev() {
+            let range = (index, index + needle_num_bytes - 1);
+
+            if bad_range(&haystack.to_vec(), range) {
+                return None;
+            }
+
+
+            let maybe = &haystack[range.0..=range.1];
+            if maybe == needle {
+                return Some(index);
+            }
+        }
+    }
+
+    None
+}
+
+
+pub fn bytes_from_string(nibbles_s:&str) -> Result<Vec<u8>, String> {
+    // TODO Allow general whitespace, not just literal spaces
+    let re_bytes = Regex::new(r"^ *([0-9a-fA-F][0-9a-fA-F] *)* *$").unwrap();
+    if re_bytes.is_match(&nibbles_s) {
+        let nibbles_v:Vec<String> = nibbles_s.replace(" ", "").chars().map(|x| x.to_string()).collect();
+        Ok(nibbles_v.chunks(2).map(|x| x.join("")).map(|x| u8::from_str_radix(&x, 16).unwrap()).collect())
+    }
+    else {
+        Err(format!("Couldn't interpret '{}' as a sequence of bytes", &nibbles_s))
+    }
+}
+
+
+// TODO: This should take a usize..=usize range object
+pub fn bad_range(bytes: &Vec<u8>, range: (usize, usize)) -> bool {
+    bytes.len() == 0 || range.1 >= bytes.len()
+}
+
+
+/// Returns new index
+pub fn move_to(state:&mut State, index:usize) -> Result<usize, String> {
+    if state.empty() {
+        Err("Empty file".to_owned())
+    }
+    else {
+        let _max_index = match state.max_index() {
+            Ok(max) => max,
+            Err(error) => {
+                return Err(error);
+            },
+        };
+
+        if index > _max_index {
+            Err(format!("{} > {} = maximum index", hex_unless_dec_with_radix(index, state.radix), hex_unless_dec_with_radix(_max_index, state.radix)))
+        }
+        else {
+            state.index = index;
+            Ok(index)
         }
     }
 }
+
+
+pub fn max_bytes_line(bytes:&[u8], width:NonZeroUsize) -> usize {
+    if bytes.len() == 0 {
+        0
+    }
+    else {
+        (bytes.len() - 1) / usize::from(width)
+    }
+}
+
+
+    #[test]
+    fn test_max_bytes_line() {
+        let _1 = NonZeroUsize::new(1).unwrap();
+        let _2 = NonZeroUsize::new(2).unwrap();
+        let _3 = NonZeroUsize::new(3).unwrap();
+        let _4 = NonZeroUsize::new(4).unwrap();
+        let _5 = NonZeroUsize::new(5).unwrap();
+        let _6 = NonZeroUsize::new(6).unwrap();
+        let _7 = NonZeroUsize::new(7).unwrap();
+        let _8 = NonZeroUsize::new(8).unwrap();
+        let bytes = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+        assert_eq!(max_bytes_line(&bytes, _1), 12);
+        let bytes = vec![8, 6, 7, 5, 3, 0, 9,];
+        assert_eq!(max_bytes_line(&bytes, _1), 6);
+        assert_eq!(max_bytes_line(&bytes, _2), 3);
+        assert_eq!(max_bytes_line(&bytes, _3), 2);
+        assert_eq!(max_bytes_line(&bytes, _4), 1);
+        assert_eq!(max_bytes_line(&bytes, _5), 1);
+        assert_eq!(max_bytes_line(&bytes, _6), 1);
+        assert_eq!(max_bytes_line(&bytes, _7), 0);
+        assert_eq!(max_bytes_line(&bytes, _8), 0);
+        let bytes = vec![8, 6, 7, 5, 3, 0,];
+        assert_eq!(max_bytes_line(&bytes, _1), 5);
+        assert_eq!(max_bytes_line(&bytes, _2), 2);
+        assert_eq!(max_bytes_line(&bytes, _3), 1);
+        assert_eq!(max_bytes_line(&bytes, _4), 1);
+        assert_eq!(max_bytes_line(&bytes, _5), 1);
+        assert_eq!(max_bytes_line(&bytes, _6), 0);
+        assert_eq!(max_bytes_line(&bytes, _7), 0);
+        assert_eq!(max_bytes_line(&bytes, _8), 0);
+        let bytes = vec![8, 6, 7,];
+        assert_eq!(max_bytes_line(&bytes, _1), 2);
+        assert_eq!(max_bytes_line(&bytes, _2), 1);
+        assert_eq!(max_bytes_line(&bytes, _3), 0);
+        assert_eq!(max_bytes_line(&bytes, _4), 0);
+        assert_eq!(max_bytes_line(&bytes, _5), 0);
+        let bytes = vec![8, 6,];
+        assert_eq!(max_bytes_line(&bytes, _1), 1);
+        assert_eq!(max_bytes_line(&bytes, _2), 0);
+        assert_eq!(max_bytes_line(&bytes, _3), 0);
+        assert_eq!(max_bytes_line(&bytes, _4), 0);
+        let bytes = vec![8,];
+        assert_eq!(max_bytes_line(&bytes, _1), 0);
+        assert_eq!(max_bytes_line(&bytes, _2), 0);
+        assert_eq!(max_bytes_line(&bytes, _3), 0);
+        assert_eq!(max_bytes_line(&bytes, _4), 0);
+        let bytes = vec![];
+        assert_eq!(max_bytes_line(&bytes, _1), 0);
+        assert_eq!(max_bytes_line(&bytes, _2), 0);
+        assert_eq!(max_bytes_line(&bytes, _3), 0);
+        assert_eq!(max_bytes_line(&bytes, _4), 0);
+    }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_padded_byte() {
+        assert_eq!(padded_byte(2), "02");
+        assert_eq!(padded_byte(10), "0a");
+    }
+
+    #[test]
+    fn test_index_of_bytes() {
+        let haystack = vec![0xde, 0xad, 0xbe, 0xef];
+        assert_eq!(index_of_bytes(&vec![], &haystack, true), None);
+        assert_eq!(index_of_bytes(&vec![0xad, 0xbe], &haystack, true), Some(1));
+        assert_eq!(index_of_bytes(&vec![0xad, 0xbe, 0xef], &haystack, true), Some(1));
+        assert_eq!(index_of_bytes(&vec![0xad, 0xbe, 0xef, 0xef], &haystack, true), None);
+        assert_eq!(index_of_bytes(&vec![0xde,], &haystack, true), Some(0));
+    }
+
+
+    #[test]
+    fn test_num_graphemes() {
+        assert_eq!(num_graphemes("hey, there"), 10);
+        assert_eq!(num_graphemes("दीपक"), 3);
+        assert_eq!(num_graphemes("ﷺ"), 1);
+        assert_eq!(num_graphemes("père"), 4);
+    }
+
+
+    #[test]
+    fn test_bytes_line() {
+        let bytes = vec![];
+        let _1 = NonZeroUsize::new(1).unwrap();
+        let _2 = NonZeroUsize::new(2).unwrap();
+        let _3 = NonZeroUsize::new(3).unwrap();
+        let _4 = NonZeroUsize::new(4).unwrap();
+        let _5 = NonZeroUsize::new(5).unwrap();
+        let _6 = NonZeroUsize::new(6).unwrap();
+        let _7 = NonZeroUsize::new(7).unwrap();
+        let _8 = NonZeroUsize::new(8).unwrap();
+        assert_eq!(bytes_line(&bytes, 0, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 1, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 1, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 2, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 2, _2).to_owned(), vec![]);
+        let bytes = vec![8, 6, 7, 5, 3, 0, 9,];
+        assert_eq!(bytes_line(&bytes, 0, _1).to_owned(), vec![8,]);
+        assert_eq!(bytes_line(&bytes, 1, _1).to_owned(), vec![6,]);
+        assert_eq!(bytes_line(&bytes, 2, _1).to_owned(), vec![7,]);
+        assert_eq!(bytes_line(&bytes, 3, _1).to_owned(), vec![5,]);
+        assert_eq!(bytes_line(&bytes, 4, _1).to_owned(), vec![3,]);
+        assert_eq!(bytes_line(&bytes, 5, _1).to_owned(), vec![0,]);
+        assert_eq!(bytes_line(&bytes, 6, _1).to_owned(), vec![9,]);
+        assert_eq!(bytes_line(&bytes, 7, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 8, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 9, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _2).to_owned(), vec![8, 6,]);
+        assert_eq!(bytes_line(&bytes, 1, _2).to_owned(), vec![7, 5,]);
+        assert_eq!(bytes_line(&bytes, 2, _2).to_owned(), vec![3, 0,]);
+        assert_eq!(bytes_line(&bytes, 3, _2).to_owned(), vec![9,]);
+        assert_eq!(bytes_line(&bytes, 4, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 5, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _3).to_owned(), vec![8, 6, 7,]);
+        assert_eq!(bytes_line(&bytes, 1, _3).to_owned(), vec![5, 3, 0,]);
+        assert_eq!(bytes_line(&bytes, 2, _3).to_owned(), vec![9,]);
+        assert_eq!(bytes_line(&bytes, 3, _3).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 4, _3).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _4).to_owned(), vec![8, 6, 7, 5,]);
+        assert_eq!(bytes_line(&bytes, 1, _4).to_owned(), vec![3, 0, 9,]);
+        assert_eq!(bytes_line(&bytes, 2, _4).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 3, _4).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 4, _4).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _5).to_owned(), vec![8, 6, 7, 5, 3,]);
+        assert_eq!(bytes_line(&bytes, 1, _5).to_owned(), vec![0, 9,]);
+        assert_eq!(bytes_line(&bytes, 2, _5).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 3, _5).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _6).to_owned(), vec![8, 6, 7, 5, 3, 0,]);
+        assert_eq!(bytes_line(&bytes, 1, _6).to_owned(), vec![9,]);
+        assert_eq!(bytes_line(&bytes, 2, _6).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 3, _6).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _7).to_owned(), vec![8, 6, 7, 5, 3, 0, 9,]);
+        assert_eq!(bytes_line(&bytes, 1, _7).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 2, _7).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 3, _7).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 0, _8).to_owned(), vec![8, 6, 7, 5, 3, 0, 9,]);
+        assert_eq!(bytes_line(&bytes, 1, _8).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 2, _8).to_owned(), vec![]);
+        assert_eq!(bytes_line(&bytes, 3, _8).to_owned(), vec![]);
+    }
+}
+
+
+pub fn bytes_line_range(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> std::ops::Range<usize> {
+    let width = usize::from(width);
+    if line_number * width < bytes.len() {
+        let end_index = min(bytes.len(), line_number * width + width);
+        line_number * width..end_index
+    }
+    else {
+        0..0
+    }
+}
+
+
+pub fn bytes_line(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> &[u8] {
+    &bytes[bytes_line_range(bytes, line_number, width)]
+}
+
+
+pub fn chars_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool) -> String {
+    let mut to_return:String = "".to_owned();
+    for index in bytes_line_range(bytes, line_number, width) {
+        to_return += &String::from(chared_byte(bytes[index], color));
+    }
+    to_return
+}
+
+
+fn formatted_byte(byte:u8, color:bool) -> String {
+    if color {
+        Byte(byte).color().paint(padded_byte(byte)).to_string()
+    }
+    else {
+        padded_byte(byte)
+    }
+}
+
+
+fn chared_byte(byte:u8, color:bool) -> String {
+    if color {
+        Byte(byte).color().paint(String::from(Byte(byte).as_char())).to_string()
+    }
+    else {
+        Byte(byte).as_char().to_string()
+    }
+}
+
+
+/// .len gives the number of bytes
+/// .chars.count() gives the number of characters (which counts è as two characters.
+/// The human concept is unicode "graphemes" or "glyphs" defined to be what
+/// think they are.
+fn num_graphemes(unicode_string: &str) -> usize {
+    return unicode_string.graphemes(true).count();
+}
+
