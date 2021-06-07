@@ -585,7 +585,7 @@ fn chared_byte(byte:u8, color:bool) -> String {
 /// .chars.count() gives the number of characters (which counts è as two characters.
 /// The human concept is unicode "graphemes" or "glyphs" defined to be what
 /// think they are.
-fn num_graphemes(unicode_string: &str) -> usize {
+pub fn num_graphemes(unicode_string: &str) -> usize {
     return unicode_string.graphemes(true).count();
 }
 
