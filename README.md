@@ -1,1 +1,1 @@
-Core functions for the `edhex` crate.
+Core functions for the [edhex](https://github.com/jbaber/edhex) crate.
