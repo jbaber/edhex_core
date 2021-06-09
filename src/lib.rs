@@ -591,14 +591,46 @@ pub fn bytes_line(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> &[u8] {
 }
 
 
+pub fn chars_line_chars(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> Vec<char> {
+    let mut to_return:Vec<char> = vec![];
+    for index in bytes_line_range(bytes, line_number, width) {
+        to_return.push(chared_byte(bytes[index]));
+    }
+
+    to_return
+}
+
+
+pub fn colored_chared_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> Vec<String> {
+    let mut to_return:Vec<String> = vec![];
+    for index in bytes_line_range(bytes, line_number, width) {
+            to_return.push(String::from(colored_chared_byte(bytes[index])));
+    }
+
+    to_return
+}
+
+
+pub fn chared_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> Vec<char> {
+    let mut to_return:Vec<char> = vec![];
+    for index in bytes_line_range(bytes, line_number, width) {
+        to_return.push(chared_byte(bytes[index]));
+    }
+
+    to_return
+}
+
+
 pub fn chars_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool) -> String {
     let mut to_return:String = "".to_owned();
-    for index in bytes_line_range(bytes, line_number, width) {
-        if color {
-            to_return += &String::from(colored_chared_byte(bytes[index]))
+    if color {
+        for colored_char in colored_chared_bytes(bytes, line_number, width) {
+            to_return += &colored_char;
         }
-        else {
-            to_return += &chared_byte(bytes[index]).to_string();
+    }
+    else {
+        for chared in chared_bytes(bytes, line_number, width) {
+            to_return += &chared.to_string();
         }
     }
 
