@@ -594,8 +594,14 @@ pub fn bytes_line(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> &[u8] {
 pub fn chars_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool) -> String {
     let mut to_return:String = "".to_owned();
     for index in bytes_line_range(bytes, line_number, width) {
-        to_return += &String::from(chared_byte(bytes[index], color));
+        if color {
+            to_return += &String::from(colored_chared_byte(bytes[index]))
+        }
+        else {
+            to_return += &chared_byte(bytes[index]).to_string();
+        }
     }
+
     to_return
 }
 
@@ -610,13 +616,13 @@ fn formatted_byte(byte:u8, color:bool) -> String {
 }
 
 
-fn chared_byte(byte:u8, color:bool) -> String {
-    if color {
-        Byte(byte).color().paint(String::from(Byte(byte).as_char())).to_string()
-    }
-    else {
-        Byte(byte).as_char().to_string()
-    }
+fn colored_chared_byte(byte:u8) -> String {
+    Byte(byte).color().paint(String::from(Byte(byte).as_char())).to_string()
+}
+
+
+fn chared_byte(byte:u8) -> char {
+    Byte(byte).as_char()
 }
 
 
