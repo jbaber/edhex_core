@@ -124,7 +124,6 @@ pub fn string_from_radix(radix: u32) -> String {
 }
 
 
-
 pub fn hex_unless_dec(number:usize, radix:u32) -> String {
     if radix == 10 {
         format!("{}", number)
@@ -133,8 +132,6 @@ pub fn hex_unless_dec(number:usize, radix:u32) -> String {
         format!("{:x}", number)
     }
 }
-
-
 
 
 pub fn hex_unless_dec_with_radix(number:usize, radix:u32) -> String {
@@ -147,9 +144,6 @@ pub fn hex_unless_dec_with_radix(number:usize, radix:u32) -> String {
 
     format!("0{}{}", letter, hex_unless_dec(number, radix))
 }
-
-
-
 
 
 impl fmt::Debug for State {
@@ -202,17 +196,17 @@ impl State {
                 print!("{}|", address_display(addresses[bytes_line_num], self.radix, &self.n_padding));
             }
 
-            print!("{}", bytes_line(bytes, bytes_line_num, self.width, self.color));
-            let expected_length = usize::from(self.width) * 3 - 1;
-            for _ in num_graphemes(&bytes_line(bytes, bytes_line_num, self.width, false))..expected_length {
-                print!(" ");
-            }
-            // TODO Do this padding stuff format!  Unclear why previous attempts
-            // have failed.
+            print!(
+                "{}{}",
+                bytes_line(bytes, bytes_line_num, self.width, self.color),
+                bytes_line_padding(bytes, bytes_line_num, self.width)
+            );
+
             if self.show_chars {
                 print!("|   {}", chars_line(bytes, bytes_line_num, self.width,
                     self.color));
             }
+
             println!();
         }
 
@@ -581,6 +575,18 @@ pub fn bytes_line_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> &
     &bytes[bytes_line_range(bytes, line_number, width)]
 }
 
+
+// TODO Do this padding stuff format!  Unclear why previous attempts
+// have failed.
+pub fn bytes_line_padding(bytes:&[u8], line_num:usize, width:NonZeroUsize) -> String{
+    let mut to_return = String::new();
+    let expected_length = usize::from(width) * 3 - 1;
+    for _ in num_graphemes(&bytes_line(bytes, line_num, width, false))..expected_length {
+        to_return += " ";
+    }
+
+    to_return
+}
 
 pub fn bytes_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool) -> String {
     bytes_line_bytes(bytes, line_number, width).iter().map(|x| formatted_byte(*x, color)).collect::<Vec<String>>().join(" ")
