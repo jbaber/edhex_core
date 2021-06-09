@@ -196,13 +196,10 @@ impl State {
 
         let bytes = &self.all_bytes[from..=to];
         let max_bytes_line_num = max_bytes_line(bytes, self.width);
-        let mut left_col_byte_num = from;
+        let addresses = self.byte_numbers(from);
         for bytes_line_num in 0..=max_bytes_line_num {
-            if bytes_line_num != 0 {
-                left_col_byte_num += usize::from(self.width);
-            }
             if self.show_byte_numbers {
-                print!("{}|", address_display(left_col_byte_num, self.radix, &self.n_padding));
+                print!("{}|", address_display(addresses[bytes_line_num], self.radix, &self.n_padding));
             }
             let cur_line = bytes_line(bytes, bytes_line_num, self.width);
             let with_color = cur_line.iter().map(|x| formatted_byte(*x, true))
@@ -226,9 +223,9 @@ impl State {
                     self.color));
             }
             println!();
-            left_col_byte_num = from + bytes_line_num * usize::from(self.width);
         }
-        Some(left_col_byte_num)
+
+        Some(addresses[max_bytes_line_num])
     }
 
 
