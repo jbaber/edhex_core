@@ -107,6 +107,8 @@ pub struct State {
 
     /* Spaces to put between a byte number and a byte when displaying */
     pub n_padding: String,
+
+    pub last_search: Option<Vec<u8>>,
 }
 
 pub fn lino(state:&State) -> String {
