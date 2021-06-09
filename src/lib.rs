@@ -3,6 +3,7 @@ use ansi_term::Color::Fixed;
 use regex::Regex;
 use std::cmp::min;
 use std::fmt;
+use std::fs::File;
 use std::num::NonZeroUsize;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -162,6 +163,17 @@ impl fmt::Debug for State {
 
 
 impl State {
+    /// Return the byte numbers necessary for the left column of a display
+    pub fn byte_numbers(&self, from:usize) -> Vec<usize> {
+        // TODO Do this with a generator once
+        // those are supported in Rust
+        let mut to_return:Vec<usize> = vec![];
+        for i in (from..self.all_bytes.len()).step_by(usize::from(self.width)) {
+            to_return.push(i);
+        }
+        to_return
+    }
+
     /// returns index of the byte in the 0-th column of the last row printed
     pub fn print_bytes(&self, range:(usize, usize)) -> Option<usize> {
         if self.empty() {
@@ -190,12 +202,7 @@ impl State {
                 left_col_byte_num += usize::from(self.width);
             }
             if self.show_byte_numbers {
-                if self.radix == 10 {
-                    print!("{:>5}{}|", left_col_byte_num, self.n_padding);
-                }
-                else {
-                    print!("{:>5x}{}|", left_col_byte_num, self.n_padding);
-                }
+                print!("{}|", address_display(left_col_byte_num, self.radix, &self.n_padding));
             }
             let cur_line = bytes_line(bytes, bytes_line_num, self.width);
             let with_color = cur_line.iter().map(|x| formatted_byte(*x, true))
@@ -387,6 +394,44 @@ pub fn max_bytes_line(bytes:&[u8], width:NonZeroUsize) -> usize {
 }
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_byte_numbers() {
+        let mut state = State {
+            radix: 16,
+            show_byte_numbers: true,
+            show_chars: true,
+            unsaved_changes: true,
+            filename: "filename".to_owned(),
+            show_prompt: true,
+            color: true,
+            index: 0,
+            width: NonZeroUsize::new(0x10).unwrap(),
+            all_bytes: vec![
+                0x00, 0x01, 0x02,
+                0x03, 0x04, 0x05,
+                0x06, 0x07, 0x08,
+                0x09, 0x0a, 0x0b,
+                0x0c, 0x0d, 0x0e,
+                0x0f, 0x10, 0x11,
+                0x12,
+            ],
+            n_padding: "   ".to_owned(),
+        };
+        assert_eq!(state.byte_numbers(0x00),
+            vec![0x00, 0x10]);
+        assert_eq!(state.byte_numbers(0x01),
+            vec![0x01, 0x11]);
+        assert_eq!(state.byte_numbers(0x04),
+            vec![0x04]);
+        state.width = NonZeroUsize::new(3).unwrap();
+        assert_eq!(state.byte_numbers(0x04),
+            vec![0x04, 0x07, 0x0a, 0x0d, 0x10,]);
+    }
+
     #[test]
     fn test_max_bytes_line() {
         let _1 = NonZeroUsize::new(1).unwrap();
@@ -441,9 +486,6 @@ pub fn max_bytes_line(bytes:&[u8], width:NonZeroUsize) -> usize {
     }
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
 
     #[test]
     fn test_padded_byte() {
@@ -589,3 +631,40 @@ pub fn num_graphemes(unicode_string: &str) -> usize {
     return unicode_string.graphemes(true).count();
 }
 
+
+/// Print version if compiled from Cargo
+pub fn print_cargo_version() {
+    if let Some(version) = option_env!("CARGO_PKG_VERSION") {
+        println!("{}", version);
+    }
+    else {
+        println!("Version unknown (not compiled with cargo)");
+    }
+}
+
+
+pub fn address_display(address: usize, radix:u32, padding:&str) -> String {
+    if radix == 10 {
+        format!("{:>5}{}", address, padding)
+    }
+    else {
+        format!("{:>5x}{}", address, padding)
+    }
+}
+
+
+pub fn filehandle(filename:&str) -> Result<Option<File>, String> {
+    match File::open(filename) {
+        Ok(filehandle) => {
+            Ok(Some(filehandle))
+        },
+        Err(error) => {
+            if error.kind() == std::io::ErrorKind::NotFound {
+                Ok(None)
+            }
+            else {
+                Err(format!("Error opening '{}'", filename))
+            }
+        },
+    }
+}
