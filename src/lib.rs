@@ -201,19 +201,10 @@ impl State {
             if self.show_byte_numbers {
                 print!("{}|", address_display(addresses[bytes_line_num], self.radix, &self.n_padding));
             }
-            let cur_line = bytes_line(bytes, bytes_line_num, self.width);
-            let with_color = cur_line.iter().map(|x| formatted_byte(*x, true))
-                    .collect::<Vec<String>>().join(" ");
-            let sans_color = cur_line.iter().map(|x| formatted_byte(*x, false))
-                    .collect::<Vec<String>>().join(" ");
-            if self.color {
-                print!("{}", with_color);
-            }
-            else {
-                print!("{}", sans_color);
-            }
+
+            print!("{}", bytes_line(bytes, bytes_line_num, self.width, self.color));
             let expected_length = usize::from(self.width) * 3 - 1;
-            for _ in num_graphemes(&sans_color)..expected_length {
+            for _ in num_graphemes(&bytes_line(bytes, bytes_line_num, self.width, false))..expected_length {
                 print!(" ");
             }
             // TODO Do this padding stuff format!  Unclear why previous attempts
@@ -521,55 +512,55 @@ mod tests {
         let _6 = NonZeroUsize::new(6).unwrap();
         let _7 = NonZeroUsize::new(7).unwrap();
         let _8 = NonZeroUsize::new(8).unwrap();
-        assert_eq!(bytes_line(&bytes, 0, _1).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _2).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 1, _1).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 1, _2).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 2, _1).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 2, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _2).to_owned(), vec![]);
         let bytes = vec![8, 6, 7, 5, 3, 0, 9,];
-        assert_eq!(bytes_line(&bytes, 0, _1).to_owned(), vec![8,]);
-        assert_eq!(bytes_line(&bytes, 1, _1).to_owned(), vec![6,]);
-        assert_eq!(bytes_line(&bytes, 2, _1).to_owned(), vec![7,]);
-        assert_eq!(bytes_line(&bytes, 3, _1).to_owned(), vec![5,]);
-        assert_eq!(bytes_line(&bytes, 4, _1).to_owned(), vec![3,]);
-        assert_eq!(bytes_line(&bytes, 5, _1).to_owned(), vec![0,]);
-        assert_eq!(bytes_line(&bytes, 6, _1).to_owned(), vec![9,]);
-        assert_eq!(bytes_line(&bytes, 7, _1).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 8, _1).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 9, _1).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _2).to_owned(), vec![8, 6,]);
-        assert_eq!(bytes_line(&bytes, 1, _2).to_owned(), vec![7, 5,]);
-        assert_eq!(bytes_line(&bytes, 2, _2).to_owned(), vec![3, 0,]);
-        assert_eq!(bytes_line(&bytes, 3, _2).to_owned(), vec![9,]);
-        assert_eq!(bytes_line(&bytes, 4, _2).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 5, _2).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _3).to_owned(), vec![8, 6, 7,]);
-        assert_eq!(bytes_line(&bytes, 1, _3).to_owned(), vec![5, 3, 0,]);
-        assert_eq!(bytes_line(&bytes, 2, _3).to_owned(), vec![9,]);
-        assert_eq!(bytes_line(&bytes, 3, _3).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 4, _3).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _4).to_owned(), vec![8, 6, 7, 5,]);
-        assert_eq!(bytes_line(&bytes, 1, _4).to_owned(), vec![3, 0, 9,]);
-        assert_eq!(bytes_line(&bytes, 2, _4).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 3, _4).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 4, _4).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _5).to_owned(), vec![8, 6, 7, 5, 3,]);
-        assert_eq!(bytes_line(&bytes, 1, _5).to_owned(), vec![0, 9,]);
-        assert_eq!(bytes_line(&bytes, 2, _5).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 3, _5).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _6).to_owned(), vec![8, 6, 7, 5, 3, 0,]);
-        assert_eq!(bytes_line(&bytes, 1, _6).to_owned(), vec![9,]);
-        assert_eq!(bytes_line(&bytes, 2, _6).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 3, _6).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _7).to_owned(), vec![8, 6, 7, 5, 3, 0, 9,]);
-        assert_eq!(bytes_line(&bytes, 1, _7).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 2, _7).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 3, _7).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 0, _8).to_owned(), vec![8, 6, 7, 5, 3, 0, 9,]);
-        assert_eq!(bytes_line(&bytes, 1, _8).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 2, _8).to_owned(), vec![]);
-        assert_eq!(bytes_line(&bytes, 3, _8).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _1).to_owned(), vec![8,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _1).to_owned(), vec![6,]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _1).to_owned(), vec![7,]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _1).to_owned(), vec![5,]);
+        assert_eq!(bytes_line_bytes(&bytes, 4, _1).to_owned(), vec![3,]);
+        assert_eq!(bytes_line_bytes(&bytes, 5, _1).to_owned(), vec![0,]);
+        assert_eq!(bytes_line_bytes(&bytes, 6, _1).to_owned(), vec![9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 7, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 8, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 9, _1).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _2).to_owned(), vec![8, 6,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _2).to_owned(), vec![7, 5,]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _2).to_owned(), vec![3, 0,]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _2).to_owned(), vec![9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 4, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 5, _2).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _3).to_owned(), vec![8, 6, 7,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _3).to_owned(), vec![5, 3, 0,]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _3).to_owned(), vec![9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _3).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 4, _3).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _4).to_owned(), vec![8, 6, 7, 5,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _4).to_owned(), vec![3, 0, 9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _4).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _4).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 4, _4).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _5).to_owned(), vec![8, 6, 7, 5, 3,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _5).to_owned(), vec![0, 9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _5).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _5).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _6).to_owned(), vec![8, 6, 7, 5, 3, 0,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _6).to_owned(), vec![9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _6).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _6).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _7).to_owned(), vec![8, 6, 7, 5, 3, 0, 9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _7).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _7).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _7).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 0, _8).to_owned(), vec![8, 6, 7, 5, 3, 0, 9,]);
+        assert_eq!(bytes_line_bytes(&bytes, 1, _8).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 2, _8).to_owned(), vec![]);
+        assert_eq!(bytes_line_bytes(&bytes, 3, _8).to_owned(), vec![]);
     }
 }
 
@@ -586,8 +577,13 @@ pub fn bytes_line_range(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> s
 }
 
 
-pub fn bytes_line(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> &[u8] {
+pub fn bytes_line_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> &[u8] {
     &bytes[bytes_line_range(bytes, line_number, width)]
+}
+
+
+pub fn bytes_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool) -> String {
+    bytes_line_bytes(bytes, line_number, width).iter().map(|x| formatted_byte(*x, color)).collect::<Vec<String>>().join(" ")
 }
 
 
