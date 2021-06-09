@@ -164,7 +164,7 @@ impl fmt::Debug for State {
 
 impl State {
     /// Return the byte numbers necessary for the left column of a display
-    pub fn byte_numbers(&self, from:usize) -> Vec<usize> {
+    pub fn addresses(&self, from:usize) -> Vec<usize> {
         // TODO Do this with a generator once
         // those are supported in Rust
         let mut to_return:Vec<usize> = vec![];
@@ -196,7 +196,7 @@ impl State {
 
         let bytes = &self.all_bytes[from..=to];
         let max_bytes_line_num = max_bytes_line(bytes, self.width);
-        let addresses = self.byte_numbers(from);
+        let addresses = self.addresses(from);
         for bytes_line_num in 0..=max_bytes_line_num {
             if self.show_byte_numbers {
                 print!("{}|", address_display(addresses[bytes_line_num], self.radix, &self.n_padding));
@@ -418,14 +418,14 @@ mod tests {
             ],
             n_padding: "   ".to_owned(),
         };
-        assert_eq!(state.byte_numbers(0x00),
+        assert_eq!(state.addresses(0x00),
             vec![0x00, 0x10]);
-        assert_eq!(state.byte_numbers(0x01),
+        assert_eq!(state.addresses(0x01),
             vec![0x01, 0x11]);
-        assert_eq!(state.byte_numbers(0x04),
+        assert_eq!(state.addresses(0x04),
             vec![0x04]);
         state.width = NonZeroUsize::new(3).unwrap();
-        assert_eq!(state.byte_numbers(0x04),
+        assert_eq!(state.addresses(0x04),
             vec![0x04, 0x07, 0x0a, 0x0d, 0x10,]);
     }
 
