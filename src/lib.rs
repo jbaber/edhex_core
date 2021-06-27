@@ -171,31 +171,24 @@ impl State {
     }
 
 
-    pub fn bytes_from(&self, address:usize) -> Result<&[u8], String> {
-
-        /* Actual maximum index, not length or whatever */
-        let max = self.max_index();
-        if max.is_err() {
-            return Err(format!("? ({:?})", max));
+    /// Return the range `self.width` bytes starting at `address`.
+    /// Could be cut short by hitting end of all bytes.
+    /// Could be empty because `address` is past end of all bytes.
+    pub fn bytes_range_from(&self, address:usize) -> std::ops::Range<usize> {
+        let width = usize::from(self.width);
+        if address < self.all_bytes.len() {
+            let end_index = min(self.all_bytes.len(), address + width);
+            address..end_index
         }
-        let max = max.unwrap();
-
-        if address > max {
-            return Err(format!("Asked for bytes from {} -- {} is last address", address, max));
+        else {
+            0..0
         }
+    }
 
-        let from = address;
 
-        /* Actual last index, not off-by-one.  i.e. use ..= for range
-         * Getting away with - 1 here because width is a NonZeroUsize */
-        let maybe_last_index = address + usize::from(self.width) - 1;
-        let to = min(max, maybe_last_index);
-
-        if bad_range(&self.all_bytes, (from, to)) {
-            return Err(format!("? (Bad range: ({}, {}))", from, to));
-        }
-
-        Ok(&self.all_bytes[from..=to])
+    /// Print `self.width` bytes from `address` or cut off if at end of all bytes
+    pub fn bytes_from(&self, address:usize) -> &[u8] {
+        &self.all_bytes[self.bytes_range_from(address)]
     }
 
 
@@ -215,8 +208,8 @@ impl State {
         let from = range.0;
         let to = min(max, range.1);
         if bad_range(&self.all_bytes, (from, to)) {
-        println!("? (Bad range: ({}, {}))", range.0, range.1);
-        return None;
+            println!("? (Bad range: ({}, {}))", range.0, range.1);
+            return None;
         }
 
         let bytes = &self.all_bytes[from..=to];
@@ -438,25 +431,25 @@ mod tests {
             n_padding: "   ".to_owned(),
         };
 
-        assert_eq!(state.bytes_from(0), Ok(&hex_twelve[0x00..=0x0f]));
-        assert_eq!(state.bytes_from(1), Ok(&hex_twelve[0x01..=0x10]));
-        assert_eq!(state.bytes_from(2), Ok(&hex_twelve[0x02..=0x11]));
-        assert_eq!(state.bytes_from(3), Ok(&hex_twelve[0x03..=0x12]));
-        assert_eq!(state.bytes_from(4), Ok(&hex_twelve[0x04..=0x12]));
-        assert_eq!(state.bytes_from(5), Ok(&hex_twelve[0x05..=0x12]));
-        assert_eq!(state.bytes_from(6), Ok(&hex_twelve[0x06..=0x12]));
-        assert_eq!(state.bytes_from(7), Ok(&hex_twelve[0x07..=0x12]));
-        assert_eq!(state.bytes_from(11), Ok(&hex_twelve[0x0b..=0x12]));
-        assert_eq!(state.bytes_from(17), Ok(&hex_twelve[0x11..=0x12]));
-        assert_eq!(state.bytes_from(18), Ok(&hex_twelve[0x12..=0x12]));
-        assert_eq!(state.bytes_from(19), Err("Asked for bytes from 19 -- 18 is last address".to_owned()));
+        assert_eq!(state.bytes_from(0), &hex_twelve[0x00..=0x0f]);
+        assert_eq!(state.bytes_from(1), &hex_twelve[0x01..=0x10]);
+        assert_eq!(state.bytes_from(2), &hex_twelve[0x02..=0x11]);
+        assert_eq!(state.bytes_from(3), &hex_twelve[0x03..=0x12]);
+        assert_eq!(state.bytes_from(4), &hex_twelve[0x04..=0x12]);
+        assert_eq!(state.bytes_from(5), &hex_twelve[0x05..=0x12]);
+        assert_eq!(state.bytes_from(6), &hex_twelve[0x06..=0x12]);
+        assert_eq!(state.bytes_from(7), &hex_twelve[0x07..=0x12]);
+        assert_eq!(state.bytes_from(11), &hex_twelve[0x0b..=0x12]);
+        assert_eq!(state.bytes_from(17), &hex_twelve[0x11..=0x12]);
+        assert_eq!(state.bytes_from(18), &hex_twelve[0x12..=0x12]);
+        assert_eq!(state.bytes_from(19), &hex_twelve[0..0]);
         state.width = NonZeroUsize::new(3).unwrap();
-        assert_eq!(state.bytes_from(0), Ok(&hex_twelve[0x00..=0x02]));
-        assert_eq!(state.bytes_from(1), Ok(&hex_twelve[0x01..=0x03]));
-        assert_eq!(state.bytes_from(11), Ok(&hex_twelve[0x0b..=0x0d]));
-        assert_eq!(state.bytes_from(17), Ok(&hex_twelve[0x11..=0x12]));
-        assert_eq!(state.bytes_from(18), Ok(&hex_twelve[0x12..=0x12]));
-        assert_eq!(state.bytes_from(19), Err("Asked for bytes from 19 -- 18 is last address".to_owned()));
+        assert_eq!(state.bytes_from(0), &hex_twelve[0x00..=0x02]);
+        assert_eq!(state.bytes_from(1), &hex_twelve[0x01..=0x03]);
+        assert_eq!(state.bytes_from(11), &hex_twelve[0x0b..=0x0d]);
+        assert_eq!(state.bytes_from(17), &hex_twelve[0x11..=0x12]);
+        assert_eq!(state.bytes_from(18), &hex_twelve[0x12..=0x12]);
+        assert_eq!(state.bytes_from(19), &hex_twelve[0..0]);
     }
 
     #[test]
