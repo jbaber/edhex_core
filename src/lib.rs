@@ -192,6 +192,24 @@ impl State {
     }
 
 
+    pub fn bytes_line(&self, bytes:&[u8], line_number:usize) -> String {
+        bytes_line_bytes(bytes, line_number, self.width).iter().map(|x| formatted_byte(*x, self.color)).collect::<Vec<String>>().join(" ")
+    }
+
+
+    // TODO Do this padding stuff format!  Unclear why previous attempts
+    // have failed.
+    pub fn bytes_line_padding(&self, bytes:&[u8], line_num:usize) -> String{
+        let mut to_return = String::new();
+        let expected_length = usize::from(self.width) * 3 - 1;
+        for _ in num_graphemes(&self.bytes_line(bytes, line_num))..expected_length {
+            to_return += " ";
+        }
+
+        to_return
+    }
+
+
     /// returns index of the byte in the 0-th column of the last row printed
     pub fn print_bytes(&self, range:(usize, usize)) -> Option<usize> {
         if self.empty() {
@@ -222,8 +240,8 @@ impl State {
 
             print!(
                 "{}{}",
-                bytes_line(bytes, bytes_line_num, self.width, self.color),
-                bytes_line_padding(bytes, bytes_line_num, self.width)
+                self.bytes_line(bytes, bytes_line_num),
+                self.bytes_line_padding(bytes, bytes_line_num)
             );
 
             if self.show_chars {
@@ -645,23 +663,6 @@ pub fn bytes_line_range(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> s
 
 pub fn bytes_line_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> &[u8] {
     &bytes[bytes_line_range(bytes, line_number, width)]
-}
-
-
-// TODO Do this padding stuff format!  Unclear why previous attempts
-// have failed.
-pub fn bytes_line_padding(bytes:&[u8], line_num:usize, width:NonZeroUsize) -> String{
-    let mut to_return = String::new();
-    let expected_length = usize::from(width) * 3 - 1;
-    for _ in num_graphemes(&bytes_line(bytes, line_num, width, false))..expected_length {
-        to_return += " ";
-    }
-
-    to_return
-}
-
-pub fn bytes_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool) -> String {
-    bytes_line_bytes(bytes, line_number, width).iter().map(|x| formatted_byte(*x, color)).collect::<Vec<String>>().join(" ")
 }
 
 
