@@ -170,6 +170,35 @@ impl State {
         to_return
     }
 
+
+    pub fn bytes_from(&self, address:usize) -> Result<&[u8], String> {
+
+        /* Actual maximum index, not length or whatever */
+        let max = self.max_index();
+        if max.is_err() {
+            return Err(format!("? ({:?})", max));
+        }
+        let max = max.unwrap();
+
+        if address > max {
+            return Err(format!("Asked for bytes from {} -- {} is last address", address, max));
+        }
+
+        let from = address;
+
+        /* Actual last index, not off-by-one.  i.e. use ..= for range
+         * Getting away with - 1 here because width is a NonZeroUsize */
+        let maybe_last_index = address + usize::from(self.width) - 1;
+        let to = min(max, maybe_last_index);
+
+        if bad_range(&self.all_bytes, (from, to)) {
+            return Err(format!("? (Bad range: ({}, {}))", from, to));
+        }
+
+        Ok(&self.all_bytes[from..=to])
+    }
+
+
     /// returns index of the byte in the 0-th column of the last row printed
     pub fn print_bytes(&self, range:(usize, usize)) -> Option<usize> {
         if self.empty() {
@@ -381,6 +410,54 @@ pub fn max_bytes_line(bytes:&[u8], width:NonZeroUsize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_bytes_from() {
+        let hex_twelve = [
+                0x00, 0x01, 0x02,
+                0x03, 0x04, 0x05,
+                0x06, 0x07, 0x08,
+                0x09, 0x0a, 0x0b,
+                0x0c, 0x0d, 0x0e,
+                0x0f, 0x10, 0x11,
+                0x12,
+            ];
+        let mut state = State {
+            radix: 16,
+            show_byte_numbers: true,
+            show_chars: true,
+            unsaved_changes: true,
+            last_search: None,
+            filename: "filename".to_owned(),
+            show_prompt: true,
+            color: true,
+            index: 0,
+            height: NonZeroUsize::new(1).unwrap(),
+            width: NonZeroUsize::new(0x10).unwrap(),
+            all_bytes: Vec::from(hex_twelve),
+            n_padding: "   ".to_owned(),
+        };
+
+        assert_eq!(state.bytes_from(0), Ok(&hex_twelve[0x00..=0x0f]));
+        assert_eq!(state.bytes_from(1), Ok(&hex_twelve[0x01..=0x10]));
+        assert_eq!(state.bytes_from(2), Ok(&hex_twelve[0x02..=0x11]));
+        assert_eq!(state.bytes_from(3), Ok(&hex_twelve[0x03..=0x12]));
+        assert_eq!(state.bytes_from(4), Ok(&hex_twelve[0x04..=0x12]));
+        assert_eq!(state.bytes_from(5), Ok(&hex_twelve[0x05..=0x12]));
+        assert_eq!(state.bytes_from(6), Ok(&hex_twelve[0x06..=0x12]));
+        assert_eq!(state.bytes_from(7), Ok(&hex_twelve[0x07..=0x12]));
+        assert_eq!(state.bytes_from(11), Ok(&hex_twelve[0x0b..=0x12]));
+        assert_eq!(state.bytes_from(17), Ok(&hex_twelve[0x11..=0x12]));
+        assert_eq!(state.bytes_from(18), Ok(&hex_twelve[0x12..=0x12]));
+        assert_eq!(state.bytes_from(19), Err("Asked for bytes from 19 -- 18 is last address".to_owned()));
+        state.width = NonZeroUsize::new(3).unwrap();
+        assert_eq!(state.bytes_from(0), Ok(&hex_twelve[0x00..=0x02]));
+        assert_eq!(state.bytes_from(1), Ok(&hex_twelve[0x01..=0x03]));
+        assert_eq!(state.bytes_from(11), Ok(&hex_twelve[0x0b..=0x0d]));
+        assert_eq!(state.bytes_from(17), Ok(&hex_twelve[0x11..=0x12]));
+        assert_eq!(state.bytes_from(18), Ok(&hex_twelve[0x12..=0x12]));
+        assert_eq!(state.bytes_from(19), Err("Asked for bytes from 19 -- 18 is last address".to_owned()));
+    }
 
     #[test]
     fn test_byte_numbers() {
