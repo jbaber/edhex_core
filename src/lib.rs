@@ -7,6 +7,7 @@ use std::fs::File;
 use std::num::NonZeroUsize;
 use unicode_segmentation::UnicodeSegmentation;
 
+
 /* Byte formatting stuff lifted from hexyl */
 pub enum ByteCategory {
     Null,
@@ -216,7 +217,9 @@ impl State {
     }
 
 
-    pub fn print_bytes(&self, range:(usize, usize)) -> Option<usize> {
+    /// returns index of the byte in the 0-th column of the main row printed
+    /// (not the context rows)
+    pub fn print_bytes(&self) -> Option<usize> {
         if self.empty() {
             return None;
         }
@@ -228,37 +231,15 @@ impl State {
         }
         let max = max.unwrap();
 
-        let from = range.0;
-        let to = min(max, range.1);
-        if bad_range(&self.all_bytes, (from, to)) {
-            println!("? (Bad range: ({}, {}))", range.0, range.1);
-            return None;
-        }
+        // TODO do this more prettily
+        let from = self.index.saturating_sub(self.before_context) * usize::from(self.width);
 
-        let bytes = &self.all_bytes[from..=to];
-        let max_bytes_line_num = max_bytes_line(bytes, self.width);
-        let addresses = self.addresses(from);
-        for bytes_line_num in 0..=max_bytes_line_num {
-            if self.show_byte_numbers {
-                print!("{}|", address_display(addresses[bytes_line_num],
-                        self.radix, &self.n_padding));
-            }
+        let to = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
 
-            print!(
-                "{}{}",
-                self.bytes_line(bytes, bytes_line_num),
-                self.bytes_line_padding(bytes, bytes_line_num)
-            );
+        /* Call the more specific function */
+        self.print_bytes_sans_context((from, to));
 
-            if self.show_chars {
-                print!("|   {}", chars_line(bytes, bytes_line_num, self.width,
-                    self.color));
-            }
-
-            println!();
-        }
-
-        Some(addresses[max_bytes_line_num])
+        return Some(min(max, self.index + usize::from(self.width)));
     }
 
     /// returns index of the byte in the 0-th column of the last row printed
@@ -345,6 +326,17 @@ impl fmt::Display for State {
                 string_from_radix(self.radix));
         to_write += &format!("Printing a newline every {} bytes\n",
                 hex_unless_dec_with_radix(usize::from(self.width), self.radix));
+
+        if self.before_context > 0 {
+            to_write += &format!("Printing {} lines before current line\n",
+            hex_unless_dec_with_radix(self.before_context, self.radix));
+        };
+
+        if self.after_context > 0 {
+            to_write += &format!("Printing {} lines after current line\n",
+            hex_unless_dec_with_radix(self.after_context, self.radix));
+        };
+
         if self.unsaved_changes {
             to_write += &format!("Unwritten changes")
         }
