@@ -216,8 +216,56 @@ impl State {
     }
 
 
-    /// returns index of the byte in the 0-th column of the last row printed
     pub fn print_bytes(&self, range:(usize, usize)) -> Option<usize> {
+        if self.empty() {
+            return None;
+        }
+
+        let max = self.max_index();
+        if max.is_err() {
+            println!("? ({:?})", max);
+            return None;
+        }
+        let max = max.unwrap();
+
+        let from = range.0;
+        let to = min(max, range.1);
+        if bad_range(&self.all_bytes, (from, to)) {
+            println!("? (Bad range: ({}, {}))", range.0, range.1);
+            return None;
+        }
+
+        let bytes = &self.all_bytes[from..=to];
+        let max_bytes_line_num = max_bytes_line(bytes, self.width);
+        let addresses = self.addresses(from);
+        for bytes_line_num in 0..=max_bytes_line_num {
+            if self.show_byte_numbers {
+                print!("{}|", address_display(addresses[bytes_line_num],
+                        self.radix, &self.n_padding));
+            }
+
+            print!(
+                "{}{}",
+                self.bytes_line(bytes, bytes_line_num),
+                self.bytes_line_padding(bytes, bytes_line_num)
+            );
+
+            if self.show_chars {
+                print!("|   {}", chars_line(bytes, bytes_line_num, self.width,
+                    self.color));
+            }
+
+            println!();
+        }
+
+        Some(addresses[max_bytes_line_num])
+    }
+
+    /// returns index of the byte in the 0-th column of the last row printed
+    /// This is more primitive than `print_bytes`.  It just prints the bytes
+    /// from the range.
+    pub fn print_bytes_sans_context(&self, range:(usize, usize)) ->
+            Option<usize> {
         if self.empty() {
             return None;
         }
