@@ -232,7 +232,7 @@ impl State {
         let max = max.unwrap();
 
         // TODO do this more prettily
-        let from = self.index.saturating_sub(self.before_context) * usize::from(self.width);
+        let from = self.index.saturating_sub(self.before_context * usize::from(self.width));
 
         let to = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
 
