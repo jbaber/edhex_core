@@ -97,7 +97,7 @@ pub struct State {
     pub show_prompt: bool,
     pub color: bool,
 
-    /* Current byte number, 0 to len -1 */
+    /* Current byte number, 0 to (len - 1) */
     pub index: usize,
 
     pub width: NonZeroUsize,
@@ -107,6 +107,12 @@ pub struct State {
 
     /* Spaces to put between a byte number and a byte when displaying */
     pub n_padding: String,
+
+    /* Number of lines to print before current line */
+    pub before_context: usize,
+
+    /* Number of lines to print after current line */
+    pub after_context: usize,
 
     pub last_search: Option<Vec<u8>>,
 }
@@ -443,7 +449,7 @@ mod tests {
             show_prompt: true,
             color: true,
             index: 0,
-            height: NonZeroUsize::new(1).unwrap(),
+            // height: NonZeroUsize::new(1).unwrap(),
             width: NonZeroUsize::new(0x10).unwrap(),
             all_bytes: Vec::from(hex_twelve),
             n_padding: "   ".to_owned(),
@@ -477,6 +483,7 @@ mod tests {
             show_byte_numbers: true,
             show_chars: true,
             unsaved_changes: true,
+            last_search: None,
             filename: "filename".to_owned(),
             show_prompt: true,
             color: true,
