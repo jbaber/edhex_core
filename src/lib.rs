@@ -1,12 +1,12 @@
 use ansi_term::Color;
 use ansi_term::Color::Fixed;
+use ansi_term::Style;
 use regex::Regex;
 use std::cmp::min;
 use std::fmt;
 use std::fs::File;
 use std::num::NonZeroUsize;
 use unicode_segmentation::UnicodeSegmentation;
-
 
 /* Byte formatting stuff lifted from hexyl */
 pub enum ByteCategory {
@@ -199,8 +199,15 @@ impl State {
     }
 
 
-    pub fn bytes_line(&self, bytes:&[u8], line_number:usize) -> String {
-        bytes_line_bytes(bytes, line_number, self.width).iter().map(|x| formatted_byte(*x, self.color)).collect::<Vec<String>>().join(" ")
+    pub fn bytes_line(&self, bytes:&[u8], line_number:usize,
+            underline:bool) -> String {
+        let join_char = if underline {
+            " "
+        }
+        else {
+            " "
+        };
+        bytes_line_bytes(bytes, line_number, self.width).iter().map(|x| formatted_byte(*x, self.color, underline)).collect::<Vec<String>>().join(join_char)
     }
 
 
@@ -209,7 +216,7 @@ impl State {
     pub fn bytes_line_padding(&self, bytes:&[u8], line_num:usize) -> String{
         let mut to_return = String::new();
         let expected_length = usize::from(self.width) * 3 - 1;
-        for _ in num_graphemes(&self.bytes_line(bytes, line_num))..expected_length {
+        for _ in num_graphemes(&self.bytes_line(bytes, line_num, false))..expected_length {
             to_return += " ";
         }
 
@@ -232,12 +239,25 @@ impl State {
         let max = max.unwrap();
 
         // TODO do this more prettily
-        let from = self.index.saturating_sub(self.before_context * usize::from(self.width));
-
-        let to = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
+        // [a..b] before_context bytes
+        // [c..d]  actual bytes
+        // [e..f]  after_context bytes
+        let a = self.index.saturating_sub(self.before_context * usize::from(self.width));
+        let b = self.index.saturating_sub(1);
+        let c = self.index;
+        let d = min(max, self.index + usize::from(self.width) - 1);
+        let e = d + 1;
+        let f = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
 
         /* Call the more specific function */
-        self.print_bytes_sans_context((from, to));
+        if self.before_context > 0 {
+            self.print_bytes_sans_context((a, b), false);
+        }
+        self.print_bytes_sans_context((c, d),
+                self.before_context > 0 || self.after_context > 0);
+        if self.after_context > 0 {
+            self.print_bytes_sans_context((e, f), false);
+        }
 
         return Some(min(max, self.index + usize::from(self.width)));
     }
@@ -245,8 +265,8 @@ impl State {
     /// returns index of the byte in the 0-th column of the last row printed
     /// This is more primitive than `print_bytes`.  It just prints the bytes
     /// from the range.
-    pub fn print_bytes_sans_context(&self, range:(usize, usize)) ->
-            Option<usize> {
+    pub fn print_bytes_sans_context(&self, range:(usize, usize),
+            underline:bool) -> Option<usize> {
         if self.empty() {
             return None;
         }
@@ -270,18 +290,20 @@ impl State {
         let addresses = self.addresses(from);
         for bytes_line_num in 0..=max_bytes_line_num {
             if self.show_byte_numbers {
-                print!("{}|", address_display(addresses[bytes_line_num], self.radix, &self.n_padding));
+                let to_display = address_display(addresses[bytes_line_num],
+                        self.radix, &self.n_padding, underline);
+                print!("{}|", to_display);
             }
 
             print!(
                 "{}{}",
-                self.bytes_line(bytes, bytes_line_num),
+                self.bytes_line(bytes, bytes_line_num, underline),
                 self.bytes_line_padding(bytes, bytes_line_num)
             );
 
             if self.show_chars {
                 print!("|   {}", chars_line(bytes, bytes_line_num, self.width,
-                    self.color));
+                    self.color, underline));
             }
 
             println!();
@@ -723,10 +745,11 @@ pub fn chars_line_chars(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> V
 }
 
 
-pub fn colored_chared_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> Vec<String> {
+pub fn colored_chared_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize,
+        underline:bool) -> Vec<String> {
     let mut to_return:Vec<String> = vec![];
     for index in bytes_line_range(bytes, line_number, width) {
-            to_return.push(String::from(colored_chared_byte(bytes[index])));
+            to_return.push(String::from(colored_chared_byte(bytes[index], underline)));
     }
 
     to_return
@@ -743,10 +766,12 @@ pub fn chared_bytes(bytes:&[u8], line_number:usize, width:NonZeroUsize) -> Vec<c
 }
 
 
-pub fn chars_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool) -> String {
+pub fn chars_line(bytes:&[u8], line_number:usize, width:NonZeroUsize,
+        color:bool, underline:bool) -> String {
     let mut to_return:String = "".to_owned();
     if color {
-        for colored_char in colored_chared_bytes(bytes, line_number, width) {
+        for colored_char in colored_chared_bytes(bytes, line_number, width,
+                underline) {
             to_return += &colored_char;
         }
     }
@@ -760,9 +785,14 @@ pub fn chars_line(bytes:&[u8], line_number:usize, width:NonZeroUsize, color:bool
 }
 
 
-fn formatted_byte(byte:u8, color:bool) -> String {
+fn formatted_byte(byte:u8, color:bool, underline:bool) -> String {
     if color {
-        Byte(byte).color().paint(padded_byte(byte)).to_string()
+        if underline {
+            Byte(byte).color().underline().paint(padded_byte(byte)).to_string()
+        }
+        else {
+            Byte(byte).color().paint(padded_byte(byte)).to_string()
+        }
     }
     else {
         padded_byte(byte)
@@ -770,8 +800,13 @@ fn formatted_byte(byte:u8, color:bool) -> String {
 }
 
 
-fn colored_chared_byte(byte:u8) -> String {
-    Byte(byte).color().paint(String::from(Byte(byte).as_char())).to_string()
+fn colored_chared_byte(byte:u8, underline: bool) -> String {
+    if underline {
+        Byte(byte).color().underline().paint(String::from(Byte(byte).as_char())).to_string()
+    }
+    else {
+        Byte(byte).color().paint(String::from(Byte(byte).as_char())).to_string()
+    }
 }
 
 
@@ -800,13 +835,23 @@ pub fn print_cargo_version() {
 }
 
 
-pub fn address_display(address: usize, radix:u32, padding:&str) -> String {
-    if radix == 10 {
-        format!("{:>5}{}", address, padding)
+pub fn address_display(address: usize, radix:u32, padding:&str,
+        underline:bool) -> String {
+    let address = if radix == 10 {
+        format!("{:>5}", address)
     }
     else {
-        format!("{:>5x}{}", address, padding)
+        format!("{:>5x}", address)
+    };
+
+    let address = if underline {
+        format!("{}", Style::new().underline().paint(address))
     }
+    else {
+        format!("{}", address)
+    };
+
+    format!("{}{}", address, padding)
 }
 
 
