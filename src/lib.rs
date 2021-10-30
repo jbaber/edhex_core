@@ -288,6 +288,10 @@ impl State {
         let bytes = &self.all_bytes[from..=to];
         let max_bytes_line_num = max_bytes_line(bytes, self.width);
         let addresses = self.addresses(from);
+        if addresses.len() == 0 {
+            return None;
+        }
+
         for bytes_line_num in 0..=max_bytes_line_num {
             if self.show_byte_numbers {
                 let to_display = address_display(addresses[bytes_line_num],
