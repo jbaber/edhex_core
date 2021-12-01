@@ -250,7 +250,7 @@ impl State {
         let f = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
 
         /* Call the more specific function */
-        if self.before_context > 0 {
+        if self.before_context > 0 && self.index > 0 {
             self.print_bytes_sans_context((a, b), false);
         }
         self.print_bytes_sans_context((c, d),
