@@ -828,14 +828,11 @@ pub fn num_graphemes(unicode_string: &str) -> usize {
 }
 
 
-/// Print version if compiled from Cargo
-pub fn print_cargo_version() {
+pub fn cargo_version() -> Result<String, String> {
     if let Some(version) = option_env!("CARGO_PKG_VERSION") {
-        println!("{}", version);
+        return Ok(String::from(version));
     }
-    else {
-        println!("Version unknown (not compiled with cargo)");
-    }
+    return Err("Version unknown (not compiled with cargo)".to_string());
 }
 
 
