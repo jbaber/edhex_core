@@ -262,32 +262,40 @@ impl State {
         return Some(min(max, self.index + usize::from(self.width)));
     }
 
-    /// returns index of the byte in the 0-th column of the last row printed
-    /// This is more primitive than `print_bytes`.  It just prints the bytes
-    /// from the range.
-    pub fn print_bytes_sans_context(&self, range:(usize, usize),
-            underline:bool) -> Option<usize> {
+
+    pub fn bytes_in_range(&self, range:(usize, usize)) -> Result<&[u8], String> {
         if self.empty() {
-            return None;
+            return Ok(&[]);
         }
 
         let max = self.max_index();
         if max.is_err() {
-            println!("? ({:?})", max);
-            return None;
+            return Err(format!("? ({:?})", max));
         }
         let max = max.unwrap();
 
         let from = range.0;
         let to = min(max, range.1);
         if bad_range(&self.all_bytes, (from, to)) {
-            println!("? (Bad range: ({}, {}))", range.0, range.1);
-            return None;
+            return Err(format!("(Bad range: ({}, {}))", range.0, range.1));
         }
 
-        let bytes = &self.all_bytes[from..=to];
+        Ok(&self.all_bytes[from..=to])
+    }
+
+    /// returns index of the byte in the 0-th column of the last row printed
+    /// This is more primitive than `print_bytes`.  It just prints the bytes
+    /// from the range.
+    pub fn print_bytes_sans_context(&self, range:(usize, usize),
+            underline:bool) -> Option<usize> {
+        let bytes = self.bytes_in_range((range.0, range.1));
+        if bytes.is_err() {
+            return None;
+        }
+        let bytes = bytes.unwrap();
+
         let max_bytes_line_num = max_bytes_line(bytes, self.width);
-        let addresses = self.addresses(from);
+        let addresses = self.addresses(range.0);
         if addresses.len() == 0 {
             return None;
         }
