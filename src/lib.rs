@@ -224,6 +224,30 @@ impl State {
     }
 
 
+    /// Return the range for the bytes in the current row
+    pub fn range_from_current_row(&self) ->
+            Result<(usize, usize), String> {
+        let last_index = self.last_byte_of_row_index();
+        if last_index.is_err() {
+            return Err(format!("{:?}", last_index));
+        }
+        Ok((self.index, last_index.unwrap()))
+    }
+
+
+    /// In current row, what's the index of the last byte
+    /// to show?
+    pub fn last_byte_of_row_index(&self) -> Result<usize, String> {
+        let max = self.max_index();
+        if max.is_err() {
+            return Err(format!("{:?}", max));
+        }
+        let max = max.unwrap();
+
+        Ok(min(max, self.index + usize::from(self.width) - 1))
+    }
+
+
     /// returns index of the byte in the 0-th column of the main row printed
     /// (not the context rows)
     pub fn print_bytes(&self) -> Option<usize> {
@@ -244,8 +268,13 @@ impl State {
         // [e..f]  after_context bytes
         let a = self.index.saturating_sub(self.before_context * usize::from(self.width));
         let b = self.index.saturating_sub(1);
-        let c = self.index;
-        let d = min(max, self.index + usize::from(self.width) - 1);
+        let cd = self.range_from_current_row();
+        if cd.is_err() {
+            return None;
+        }
+        let cd = cd.unwrap();
+        let c = cd.0;
+        let d = cd.1;
         let e = d + 1;
         let f = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
 
