@@ -294,7 +294,7 @@ impl State {
         }
         let bytes = bytes.unwrap();
 
-        let max_bytes_line_num = max_bytes_line(bytes, self.width);
+        let max_bytes_line_num = max_bytes_line_num(bytes, self.width);
         let addresses = self.addresses(range.0);
         if addresses.len() == 0 {
             return None;
@@ -488,7 +488,10 @@ pub fn move_to(state:&mut State, index:usize) -> Result<usize, String> {
 }
 
 
-pub fn max_bytes_line(bytes:&[u8], width:NonZeroUsize) -> usize {
+/// When printing [1, 2, 3, 4, 5, 6, 7] on a width of 3, the
+/// maximum 0-up line number is 3.  This function returns that
+/// calculation.  See test_max_bytes_line for examples
+pub fn max_bytes_line_num(bytes:&[u8], width:NonZeroUsize) -> usize {
     if bytes.len() == 0 {
         0
     }
@@ -527,6 +530,8 @@ mod tests {
             width: NonZeroUsize::new(0x10).unwrap(),
             all_bytes: Vec::from(hex_twelve),
             n_padding: "   ".to_owned(),
+            after_context: 0,
+            before_context: 0,
         };
 
         assert_eq!(state.bytes_from(0), &hex_twelve[0x00..=0x0f]);
@@ -562,6 +567,8 @@ mod tests {
             show_prompt: true,
             color: true,
             index: 0,
+            after_context: 0,
+            before_context: 0,
             width: NonZeroUsize::new(0x10).unwrap(),
             all_bytes: vec![
                 0x00, 0x01, 0x02,
@@ -596,46 +603,46 @@ mod tests {
         let _7 = NonZeroUsize::new(7).unwrap();
         let _8 = NonZeroUsize::new(8).unwrap();
         let bytes = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
-        assert_eq!(max_bytes_line(&bytes, _1), 12);
+        assert_eq!(max_bytes_line_num(&bytes, _1), 12);
         let bytes = vec![8, 6, 7, 5, 3, 0, 9,];
-        assert_eq!(max_bytes_line(&bytes, _1), 6);
-        assert_eq!(max_bytes_line(&bytes, _2), 3);
-        assert_eq!(max_bytes_line(&bytes, _3), 2);
-        assert_eq!(max_bytes_line(&bytes, _4), 1);
-        assert_eq!(max_bytes_line(&bytes, _5), 1);
-        assert_eq!(max_bytes_line(&bytes, _6), 1);
-        assert_eq!(max_bytes_line(&bytes, _7), 0);
-        assert_eq!(max_bytes_line(&bytes, _8), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _1), 6);
+        assert_eq!(max_bytes_line_num(&bytes, _2), 3);
+        assert_eq!(max_bytes_line_num(&bytes, _3), 2);
+        assert_eq!(max_bytes_line_num(&bytes, _4), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _5), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _6), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _7), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _8), 0);
         let bytes = vec![8, 6, 7, 5, 3, 0,];
-        assert_eq!(max_bytes_line(&bytes, _1), 5);
-        assert_eq!(max_bytes_line(&bytes, _2), 2);
-        assert_eq!(max_bytes_line(&bytes, _3), 1);
-        assert_eq!(max_bytes_line(&bytes, _4), 1);
-        assert_eq!(max_bytes_line(&bytes, _5), 1);
-        assert_eq!(max_bytes_line(&bytes, _6), 0);
-        assert_eq!(max_bytes_line(&bytes, _7), 0);
-        assert_eq!(max_bytes_line(&bytes, _8), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _1), 5);
+        assert_eq!(max_bytes_line_num(&bytes, _2), 2);
+        assert_eq!(max_bytes_line_num(&bytes, _3), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _4), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _5), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _6), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _7), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _8), 0);
         let bytes = vec![8, 6, 7,];
-        assert_eq!(max_bytes_line(&bytes, _1), 2);
-        assert_eq!(max_bytes_line(&bytes, _2), 1);
-        assert_eq!(max_bytes_line(&bytes, _3), 0);
-        assert_eq!(max_bytes_line(&bytes, _4), 0);
-        assert_eq!(max_bytes_line(&bytes, _5), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _1), 2);
+        assert_eq!(max_bytes_line_num(&bytes, _2), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _3), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _4), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _5), 0);
         let bytes = vec![8, 6,];
-        assert_eq!(max_bytes_line(&bytes, _1), 1);
-        assert_eq!(max_bytes_line(&bytes, _2), 0);
-        assert_eq!(max_bytes_line(&bytes, _3), 0);
-        assert_eq!(max_bytes_line(&bytes, _4), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _1), 1);
+        assert_eq!(max_bytes_line_num(&bytes, _2), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _3), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _4), 0);
         let bytes = vec![8,];
-        assert_eq!(max_bytes_line(&bytes, _1), 0);
-        assert_eq!(max_bytes_line(&bytes, _2), 0);
-        assert_eq!(max_bytes_line(&bytes, _3), 0);
-        assert_eq!(max_bytes_line(&bytes, _4), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _1), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _2), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _3), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _4), 0);
         let bytes = vec![];
-        assert_eq!(max_bytes_line(&bytes, _1), 0);
-        assert_eq!(max_bytes_line(&bytes, _2), 0);
-        assert_eq!(max_bytes_line(&bytes, _3), 0);
-        assert_eq!(max_bytes_line(&bytes, _4), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _1), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _2), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _3), 0);
+        assert_eq!(max_bytes_line_num(&bytes, _4), 0);
     }
 
 
