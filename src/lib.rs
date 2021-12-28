@@ -910,7 +910,7 @@ fn colored_chared_byte(byte:u8, underline: bool) -> String {
 }
 
 
-fn chared_byte(byte:u8) -> char {
+pub fn chared_byte(byte:u8) -> char {
     Byte(byte).as_char()
 }
 
