@@ -199,6 +199,16 @@ impl State {
     }
 
 
+    pub fn bytes_from_current_row(&self) -> &[u8] {
+        self.bytes_from(self.index)
+    }
+
+
+    pub fn current_row_string(&self) -> String {
+        self.bytes_line(self.bytes_from_current_row(), 0, false)
+    }
+
+
     pub fn bytes_line(&self, bytes:&[u8], line_number:usize,
             underline:bool) -> String {
         let join_char = if underline {
