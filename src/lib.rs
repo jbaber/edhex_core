@@ -5,8 +5,10 @@ use regex::Regex;
 use std::cmp::min;
 use std::fmt;
 use std::fs::File;
+use std::io::Read;
 use std::num::NonZeroUsize;
 use unicode_segmentation::UnicodeSegmentation;
+
 
 /* Byte formatting stuff lifted from hexyl */
 pub enum ByteCategory {
@@ -85,6 +87,46 @@ pub fn num_bytes_or_die(open_file: &Option<std::fs::File>) -> Result<usize, i32>
             Err(2)
         }
     }
+}
+
+
+pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
+    let file = match filehandle(filename) {
+        Ok(Some(filehandle)) => {
+            Some(filehandle)
+        },
+        Ok(None) => None,
+        Err(error) => {
+            return Err(format!("Problem opening '{}' ({:?})", filename, error));
+        }
+    };
+
+    let original_num_bytes = match num_bytes_or_die(&file) {
+        Ok(num_bytes) => {
+            num_bytes
+        },
+        Err(errcode) => {
+            return Err(format!("Couldn't read all of {}.  Errorcode {}", filename, errcode));
+        }
+    };
+
+    /* Read all bytes into memory just like real ed */
+    // TODO A real hex editor needs to buffer
+    let mut all_bytes = Vec::new();
+    if file.is_some() {
+        match file.unwrap().read_to_end(&mut all_bytes) {
+            Err(_) => {
+                return Err(format!("Couldn't read {}", filename));
+            },
+            Ok(num_bytes_read) => {
+                if num_bytes_read != original_num_bytes {
+                    return Err(format!("Only read {} of {} bytes of {}", num_bytes_read,
+                            original_num_bytes, filename));
+                }
+            }
+        }
+    }
+    Ok(all_bytes)
 }
 
 
