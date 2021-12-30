@@ -324,9 +324,7 @@ impl State {
         if cd.is_err() {
             return None;
         }
-        let cd = cd.unwrap();
-        let c = cd.0;
-        let d = cd.1;
+        let (c, d) = cd.unwrap();
         let e = d + 1;
         let f = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
 
