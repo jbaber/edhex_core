@@ -426,7 +426,8 @@ impl State {
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut to_write:String;
-        to_write = format!("At byte {} of {}\n", lino(&self),
+        to_write = format!("Filename: {}\n", self.filename);
+        to_write += &format!("At byte {} of {}\n", lino(&self),
                 hex_unless_dec_with_radix(self.all_bytes.len(), self.radix));
         if self.show_byte_numbers {
             to_write += &format!("Printing byte numbers in {}\n",
