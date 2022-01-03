@@ -150,6 +150,7 @@ pub struct State {
 
     pub show_prompt: bool,
     pub color: bool,
+    pub readonly: bool,
 
     /* Current byte number, 0 to (len - 1) */
     pub index: usize,
@@ -463,10 +464,14 @@ impl fmt::Display for State {
         };
 
         if self.unsaved_changes {
-            to_write += &format!("Unwritten changes")
+            to_write += &format!("Unwritten changes\n")
         }
         else {
-            to_write += &format!("No unwritten changes")
+            to_write += &format!("No unwritten changes\n")
+        }
+
+        if self.readonly {
+            to_write += &format!("In read-only mode\n")
         }
 
         write!(f, "{}", to_write)
@@ -612,6 +617,7 @@ mod tests {
             show_byte_numbers: true,
             show_chars: true,
             unsaved_changes: true,
+            readonly: false,
             last_search: None,
             filename: "filename".to_owned(),
             show_prompt: true,
@@ -653,6 +659,7 @@ mod tests {
             show_byte_numbers: true,
             show_chars: true,
             unsaved_changes: true,
+            readonly: false,
             last_search: None,
             filename: "filename".to_owned(),
             show_prompt: true,
