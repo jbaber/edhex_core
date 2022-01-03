@@ -7,6 +7,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::Read;
 use std::num::NonZeroUsize;
+use std::path::Path;
 use unicode_segmentation::UnicodeSegmentation;
 
 
@@ -72,6 +73,13 @@ pub const COLOR_ASCII_OTHER: Color = Color::Purple;
 pub const COLOR_NONASCII: Color = Color::Yellow;
 
 
+/// TODO Per https://doc.rust-lang.org/std/io/enum.ErrorKind.html
+/// IsADirectory isn't available yet.  Check against it when it is.
+pub fn is_a_regular_file(filename: &str) -> bool {
+    let path = Path::new(filename);
+    path.is_file()
+}
+
 pub fn num_bytes_or_die(open_file: &Option<std::fs::File>) -> Result<usize, i32> {
     if open_file.is_none() {
         return Ok(0);
@@ -116,6 +124,9 @@ pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
     if file.is_some() {
         match file.unwrap().read_to_end(&mut all_bytes) {
             Err(_) => {
+                if !is_a_regular_file(filename) {
+                    return Err(format!("{} isn't a regular file.", filename));
+                }
                 return Err(format!("Couldn't read {}", filename));
             },
             Ok(num_bytes_read) => {
