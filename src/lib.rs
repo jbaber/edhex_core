@@ -80,6 +80,13 @@ pub fn is_a_regular_file(filename: &str) -> bool {
     path.is_file()
 }
 
+
+pub fn path_exists(filename: &str) -> bool {
+    let path = Path::new(filename);
+    path.exists()
+}
+
+
 pub fn num_bytes_or_die(open_file: &Option<std::fs::File>) -> Result<usize, i32> {
     if open_file.is_none() {
         return Ok(0);
@@ -124,20 +131,34 @@ pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
     if file.is_some() {
         match file.unwrap().read_to_end(&mut all_bytes) {
             Err(_) => {
-                if !is_a_regular_file(filename) {
-                    return Err(format!("{} isn't a regular file.", filename));
+                if path_exists(filename) {
+                    if !is_a_regular_file(filename) {
+                        Err(format!("{} isn't a regular file.", filename))
+                    }
+                    else {
+                        Err(format!("Couldn't read {}", filename))
+                    }
                 }
-                return Err(format!("Couldn't read {}", filename));
+                else {
+
+                    /* Empty */
+                    Ok(all_bytes)
+                }
             },
             Ok(num_bytes_read) => {
                 if num_bytes_read != original_num_bytes {
-                    return Err(format!("Only read {} of {} bytes of {}", num_bytes_read,
-                            original_num_bytes, filename));
+                    Err(format!("Only read {} of {} bytes of {}",
+                            num_bytes_read, original_num_bytes, filename))
+                }
+                else {
+                    Ok(all_bytes)
                 }
             }
         }
     }
-    Ok(all_bytes)
+    else {
+        Ok(all_bytes)
+    }
 }
 
 
