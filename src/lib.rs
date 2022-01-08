@@ -11,6 +11,7 @@ use std::fs::File;
 use std::io::Read;
 use std::num::NonZeroUsize;
 use std::path::Path;
+use thiserror::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
 
@@ -108,14 +109,32 @@ pub fn num_bytes_or_die(open_file: &Option<std::fs::File>) -> Result<usize, i32>
 }
 
 
-pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
+#[derive(Error, Debug)]
+pub enum AllBytesFromFilenameError {
+    #[error("Cannot read file")]
+    FileCannotBeRead,
+    #[error("File does not exist")]
+    FileDoesNotExist,
+    #[error("File is not a regular file")]
+    NotARegularFile,
+    #[error("Cannot read all bytes of file")]
+    CantReadAllBytes,
+}
+
+
+pub fn all_bytes_from_filename(filename: &str)
+        -> Result<Vec<u8>, AllBytesFromFilenameError> {
+
+    /* As written right now, `file` always is Some */
     let file = match filehandle(filename) {
         Ok(Some(filehandle)) => {
             Some(filehandle)
         },
-        Ok(None) => None,
-        Err(error) => {
-            return Err(format!("Problem opening '{}' ({:?})", filename, error));
+        Ok(None) => {
+            return Err(AllBytesFromFilenameError::FileDoesNotExist);
+        },
+        Err(_) => {
+            return Err(AllBytesFromFilenameError::FileCannotBeRead);
         }
     };
 
@@ -123,8 +142,8 @@ pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
         Ok(num_bytes) => {
             num_bytes
         },
-        Err(errcode) => {
-            return Err(format!("Couldn't read all of {}.  Errorcode {}", filename, errcode));
+        Err(_) => {
+            return Err(AllBytesFromFilenameError::FileCannotBeRead);
         }
     };
 
@@ -136,22 +155,19 @@ pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
             Err(_) => {
                 if path_exists(filename) {
                     if !is_a_regular_file(filename) {
-                        Err(format!("{} isn't a regular file.", filename))
+                        Err(AllBytesFromFilenameError::NotARegularFile)
                     }
                     else {
-                        Err(format!("Couldn't read {}", filename))
+                        Err(AllBytesFromFilenameError::FileCannotBeRead)
                     }
                 }
                 else {
-
-                    /* Empty */
-                    Ok(all_bytes)
+                    Err(AllBytesFromFilenameError::FileDoesNotExist)
                 }
             },
             Ok(num_bytes_read) => {
                 if num_bytes_read != original_num_bytes {
-                    Err(format!("Only read {} of {} bytes of {}",
-                            num_bytes_read, original_num_bytes, filename))
+                    Err(AllBytesFromFilenameError::CantReadAllBytes)
                 }
                 else {
                     Ok(all_bytes)
@@ -160,7 +176,7 @@ pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
         }
     }
     else {
-        Ok(all_bytes)
+        Err(AllBytesFromFilenameError::FileDoesNotExist)
     }
 }
 
