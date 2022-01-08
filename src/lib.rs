@@ -344,6 +344,37 @@ impl State {
     }
 
 
+    /// Note:  For the forseeable future, from_reader is actually slower
+    /// than drawing the entire file into memory.  So until that changes,
+    /// doing the latter:  https://github.com/serde-rs/json/issues/160
+    pub fn from_filename(filename: &str) -> Result<Self, String> {
+        let state_sans_bytes_s = fs::read_to_string(filename);
+        if state_sans_bytes_s.is_err() {
+            return Err(format!("Problem opening '{}' ({:?})", filename,
+                    state_sans_bytes_s));
+        }
+        let state_sans_bytes_s = state_sans_bytes_s.unwrap();
+        let state_sans_bytes_r = serde_json::from_str(&state_sans_bytes_s);
+        if state_sans_bytes_r.is_err() {
+            return Err(format!("? {:?}", state_sans_bytes_r));
+        }
+        let state_sans_bytes: StateSansBytes = state_sans_bytes_r.unwrap();
+
+        let all_bytes = all_bytes_from_filename(&state_sans_bytes.filename); 
+        if all_bytes.is_ok() {
+            let mut to_return = State::from(&state_sans_bytes);
+            to_return.all_bytes = all_bytes.unwrap();
+            Ok(to_return)
+        }
+        else {
+            Err(format!(
+                "State in file '{}' said to find the bytes in '{}', but
+                    couldn't read '{}'.", filename, state_sans_bytes.filename,
+                    state_sans_bytes.filename))
+        }
+    }
+
+
     /// Serialize to a json blob.
     /// Don't include all_bytes, not only because it could be huge, but
     /// because if you load a state from disk and its bytes differ from
