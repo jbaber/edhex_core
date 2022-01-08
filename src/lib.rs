@@ -2,8 +2,11 @@ use ansi_term::Color;
 use ansi_term::Color::Fixed;
 use ansi_term::Style;
 use regex::Regex;
+use serde::{Serialize, Deserialize};
 use std::cmp::min;
+use std::convert::From;
 use std::fmt;
+use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::num::NonZeroUsize;
@@ -162,6 +165,94 @@ pub fn all_bytes_from_filename(filename: &str) -> Result<Vec<u8>, String> {
 }
 
 
+
+/// This struct exists exclusively for serializing State's to disk without
+/// including all_bytes.  If more entries end up in State that need to be
+/// saved off, change this struct to reflect them.
+///
+/// Attempts to deserialize from one of these will cause you to notice
+/// missing keys if State changes without you updating this.
+#[derive(Serialize, Deserialize, Debug)]
+pub struct StateSansBytes {
+    pub radix: u32,
+    pub show_byte_numbers: bool,
+    pub show_chars: bool,
+    pub unsaved_changes: bool,
+    pub filename: String,
+
+    pub show_prompt: bool,
+    pub color: bool,
+    pub readonly: bool,
+
+    /* Current byte number, 0 to (len - 1) */
+    pub index: usize,
+
+    pub width: NonZeroUsize,
+
+    /* Spaces to put between a byte number and a byte when displaying */
+    pub n_padding: String,
+
+    /* Number of lines to print before current line */
+    pub before_context: usize,
+
+    /* Number of lines to print after current line */
+    pub after_context: usize,
+
+    pub last_search: Option<Vec<u8>>,
+}
+
+
+impl From<&State> for StateSansBytes {
+    fn from(state: &State) -> Self {
+
+        /* As far as I can tell, there's no way to do this with update syntax
+         * since they're different types of structs */
+        StateSansBytes {
+            radix: state.radix,
+            show_byte_numbers: state.show_byte_numbers,
+            show_chars: state.show_chars,
+            unsaved_changes: state.unsaved_changes,
+            filename: state.filename.clone(),
+            show_prompt: state.show_prompt,
+            color: state.color,
+            readonly: state.readonly,
+            index: state.index,
+            width: state.width,
+            n_padding: state.n_padding.clone(),
+            before_context: state.before_context,
+            after_context: state.after_context,
+            last_search: state.last_search.clone(),
+        }
+    }
+}
+
+
+impl From<&StateSansBytes> for State {
+    fn from(state_sans_bytes: &StateSansBytes) -> Self {
+
+        /* As far as I can tell, there's no way to do this with update syntax
+         * since they're different types of structs */
+        State {
+            radix: state_sans_bytes.radix,
+            show_byte_numbers: state_sans_bytes.show_byte_numbers,
+            show_chars: state_sans_bytes.show_chars,
+            unsaved_changes: state_sans_bytes.unsaved_changes,
+            filename: state_sans_bytes.filename.clone(),
+            show_prompt: state_sans_bytes.show_prompt,
+            color: state_sans_bytes.color,
+            readonly: state_sans_bytes.readonly,
+            index: state_sans_bytes.index,
+            width: state_sans_bytes.width,
+            n_padding: state_sans_bytes.n_padding.clone(),
+            before_context: state_sans_bytes.before_context,
+            after_context: state_sans_bytes.after_context,
+            last_search: state_sans_bytes.last_search.clone(),
+            all_bytes: vec![],
+        }
+    }
+}
+
+
 pub struct State {
     pub radix: u32,
     pub show_byte_numbers: bool,
@@ -250,6 +341,36 @@ impl State {
             to_return.push(i);
         }
         to_return
+    }
+
+
+    /// Serialize to a json blob.
+    /// Don't include all_bytes, not only because it could be huge, but
+    /// because if you load a state from disk and its bytes differ from
+    /// the actual file's on disk bytes, neither collection of bytes are
+    /// canonical.  User's can write out bytes to other files at will.
+    pub fn write_to_disk(&self, filename: &str) -> Result<(), String> {
+
+        /* NOTICE: To exclude all_bytes, we have to list all the keys
+        *  we want to save.  There is no reasonable, general way to
+        *  iterate through all keys in a struct.
+        *  When State changes what you'd want to save off, you have to
+        *  change what this function saves off, too. */
+        let serialized = serde_json::to_string_pretty(&StateSansBytes::from(self));
+
+        if serialized.is_err() {
+            return Err("? Could not serialize state.".to_owned());
+        }
+        let serialized = serialized.unwrap();
+
+        let result = std::fs::write(filename, &serialized);
+
+        if result.is_err() {
+            Err(format!("? Couldn't write to {}", filename))
+        }
+        else {
+            Ok(())
+        }
     }
 
 
