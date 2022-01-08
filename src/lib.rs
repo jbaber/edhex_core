@@ -190,54 +190,24 @@ pub fn all_bytes_from_filename(filename: &str)
 /// missing keys if State changes without you updating this.
 #[derive(Serialize, Deserialize, Debug)]
 pub struct StateSansBytes {
-    pub radix: u32,
-    pub show_byte_numbers: bool,
-    pub show_chars: bool,
+    pub prefs: Preferences,
     pub unsaved_changes: bool,
     pub filename: String,
-
-    pub show_prompt: bool,
-    pub color: bool,
     pub readonly: bool,
-
-    /* Current byte number, 0 to (len - 1) */
-    pub index: usize,
-
-    pub width: NonZeroUsize,
-
-    /* Spaces to put between a byte number and a byte when displaying */
-    pub n_padding: String,
-
-    /* Number of lines to print before current line */
-    pub before_context: usize,
-
-    /* Number of lines to print after current line */
-    pub after_context: usize,
-
     pub last_search: Option<Vec<u8>>,
+    pub index: usize,
 }
 
 
 impl From<&State> for StateSansBytes {
     fn from(state: &State) -> Self {
-
-        /* As far as I can tell, there's no way to do this with update syntax
-         * since they're different types of structs */
         StateSansBytes {
-            radix: state.radix,
-            show_byte_numbers: state.show_byte_numbers,
-            show_chars: state.show_chars,
+            prefs: state.prefs.clone(),
             unsaved_changes: state.unsaved_changes,
             filename: state.filename.clone(),
-            show_prompt: state.show_prompt,
-            color: state.color,
             readonly: state.readonly,
-            index: state.index,
-            width: state.width,
-            n_padding: state.n_padding.clone(),
-            before_context: state.before_context,
-            after_context: state.after_context,
             last_search: state.last_search.clone(),
+            index: state.index,
         }
     }
 }
@@ -245,23 +215,12 @@ impl From<&State> for StateSansBytes {
 
 impl From<&StateSansBytes> for State {
     fn from(state_sans_bytes: &StateSansBytes) -> Self {
-
-        /* As far as I can tell, there's no way to do this with update syntax
-         * since they're different types of structs */
         State {
-            radix: state_sans_bytes.radix,
-            show_byte_numbers: state_sans_bytes.show_byte_numbers,
-            show_chars: state_sans_bytes.show_chars,
+            prefs: state_sans_bytes.prefs.clone(),
             unsaved_changes: state_sans_bytes.unsaved_changes,
             filename: state_sans_bytes.filename.clone(),
-            show_prompt: state_sans_bytes.show_prompt,
-            color: state_sans_bytes.color,
             readonly: state_sans_bytes.readonly,
             index: state_sans_bytes.index,
-            width: state_sans_bytes.width,
-            n_padding: state_sans_bytes.n_padding.clone(),
-            before_context: state_sans_bytes.before_context,
-            after_context: state_sans_bytes.after_context,
             last_search: state_sans_bytes.last_search.clone(),
             all_bytes: vec![],
         }
@@ -269,24 +228,14 @@ impl From<&StateSansBytes> for State {
 }
 
 
-pub struct State {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Preferences {
     pub radix: u32,
     pub show_byte_numbers: bool,
     pub show_chars: bool,
-    pub unsaved_changes: bool,
-    pub filename: String,
-
     pub show_prompt: bool,
     pub color: bool,
-    pub readonly: bool,
-
-    /* Current byte number, 0 to (len - 1) */
-    pub index: usize,
-
     pub width: NonZeroUsize,
-
-    /* The bytes in memory */
-    pub all_bytes: Vec<u8>,
 
     /* Spaces to put between a byte number and a byte when displaying */
     pub n_padding: String,
@@ -296,12 +245,26 @@ pub struct State {
 
     /* Number of lines to print after current line */
     pub after_context: usize,
-
-    pub last_search: Option<Vec<u8>>,
 }
 
+
+pub struct State {
+    pub prefs: Preferences,
+    pub unsaved_changes: bool,
+    pub filename: String,
+    pub readonly: bool,
+    pub last_search: Option<Vec<u8>>,
+
+    /* Current byte number, 0 to (len - 1) */
+    pub index: usize,
+
+    /* The bytes in memory */
+    pub all_bytes: Vec<u8>,
+}
+
+
 pub fn lino(state:&State) -> String {
-    hex_unless_dec_with_radix(state.index, state.radix)
+    hex_unless_dec_with_radix(state.index, state.prefs.radix)
 }
 
 
@@ -340,8 +303,8 @@ pub fn hex_unless_dec_with_radix(number:usize, radix:u32) -> String {
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "radix: {}|unsaved_changes: {}|show_byte_numbers: {}|show_chars: {}|index: {}|width: {}|n_padding: '{}'|filename: {}|",
-                self.radix, self.unsaved_changes, self.show_byte_numbers,
-                self.show_chars, self.index, self.width, self.n_padding,
+                self.prefs.radix, self.unsaved_changes, self.prefs.show_byte_numbers,
+                self.prefs.show_chars, self.index, self.prefs.width, self.prefs.n_padding,
                 self.filename)
     }
 }
@@ -353,7 +316,7 @@ impl State {
         // TODO Do this with a generator once
         // those are supported in Rust
         let mut to_return:Vec<usize> = vec![];
-        for i in (from..self.all_bytes.len()).step_by(usize::from(self.width)) {
+        for i in (from..self.all_bytes.len()).step_by(usize::from(self.prefs.width)) {
             to_return.push(i);
         }
         to_return
@@ -421,11 +384,11 @@ impl State {
     }
 
 
-    /// Return the range `self.width` bytes starting at `address`.
+    /// Return the range `self.prefs.width` bytes starting at `address`.
     /// Could be cut short by hitting end of all bytes.
     /// Could be empty because `address` is past end of all bytes.
     pub fn bytes_range_from(&self, address:usize) -> std::ops::Range<usize> {
-        let width = usize::from(self.width);
+        let width = usize::from(self.prefs.width);
         if address < self.all_bytes.len() {
             let end_index = min(self.all_bytes.len(), address + width);
             address..end_index
@@ -436,7 +399,7 @@ impl State {
     }
 
 
-    /// Print `self.width` bytes from `address` or cut off if at end of all bytes
+    /// Print `self.prefs.width` bytes from `address` or cut off if at end of all bytes
     pub fn bytes_from(&self, address:usize) -> &[u8] {
         &self.all_bytes[self.bytes_range_from(address)]
     }
@@ -460,7 +423,7 @@ impl State {
         else {
             " "
         };
-        bytes_line_bytes(bytes, line_number, self.width).iter().map(|x| formatted_byte(*x, self.color, underline)).collect::<Vec<String>>().join(join_char)
+        bytes_line_bytes(bytes, line_number, self.prefs.width).iter().map(|x| formatted_byte(*x, self.prefs.color, underline)).collect::<Vec<String>>().join(join_char)
     }
 
 
@@ -468,7 +431,7 @@ impl State {
     // have failed.
     pub fn bytes_line_padding(&self, bytes:&[u8], line_num:usize) -> String{
         let mut to_return = String::new();
-        let expected_length = usize::from(self.width) * 3 - 1;
+        let expected_length = usize::from(self.prefs.width) * 3 - 1;
         for _ in num_graphemes(&self.bytes_line(bytes, line_num, false))..expected_length {
             to_return += " ";
         }
@@ -497,7 +460,7 @@ impl State {
         }
         let max = max.unwrap();
 
-        Ok(min(max, self.index + usize::from(self.width) - 1))
+        Ok(min(max, self.index + usize::from(self.prefs.width) - 1))
     }
 
 
@@ -519,7 +482,7 @@ impl State {
         // [a..b] before_context bytes
         // [c..d]  actual bytes
         // [e..f]  after_context bytes
-        let a = self.index.saturating_sub(self.before_context * usize::from(self.width));
+        let a = self.index.saturating_sub(self.prefs.before_context * usize::from(self.prefs.width));
         let b = self.index.saturating_sub(1);
         let cd = self.range_from_current_row();
         if cd.is_err() {
@@ -527,19 +490,19 @@ impl State {
         }
         let (c, d) = cd.unwrap();
         let e = d + 1;
-        let f = min(max, self.index + (self.after_context + 1) * usize::from(self.width) - 1);
+        let f = min(max, self.index + (self.prefs.after_context + 1) * usize::from(self.prefs.width) - 1);
 
         /* Call the more specific function */
-        if self.before_context > 0 && self.index > 0 {
+        if self.prefs.before_context > 0 && self.index > 0 {
             self.print_bytes_sans_context((a, b), false);
         }
         self.print_bytes_sans_context((c, d),
-                self.before_context > 0 || self.after_context > 0);
-        if self.after_context > 0 {
+                self.prefs.before_context > 0 || self.prefs.after_context > 0);
+        if self.prefs.after_context > 0 {
             self.print_bytes_sans_context((e, f), false);
         }
 
-        return Some(min(max, self.index + usize::from(self.width)));
+        return Some(min(max, self.index + usize::from(self.prefs.width)));
     }
 
 
@@ -574,16 +537,16 @@ impl State {
         }
         let bytes = bytes.unwrap();
 
-        let max_bytes_line_num = max_bytes_line_num(bytes, self.width);
+        let max_bytes_line_num = max_bytes_line_num(bytes, self.prefs.width);
         let addresses = self.addresses(range.0);
         if addresses.len() == 0 {
             return None;
         }
 
         for bytes_line_num in 0..=max_bytes_line_num {
-            if self.show_byte_numbers {
+            if self.prefs.show_byte_numbers {
                 let to_display = address_display(addresses[bytes_line_num],
-                        self.radix, &self.n_padding, underline);
+                        self.prefs.radix, &self.prefs.n_padding, underline);
                 print!("{}|", to_display);
             }
 
@@ -593,9 +556,9 @@ impl State {
                 self.bytes_line_padding(bytes, bytes_line_num)
             );
 
-            if self.show_chars {
-                print!("|   {}", chars_line(bytes, bytes_line_num, self.width,
-                    self.color, underline));
+            if self.prefs.show_chars {
+                print!("|   {}", chars_line(bytes, bytes_line_num, self.prefs.width,
+                    self.prefs.color, underline));
             }
 
             println!();
@@ -610,7 +573,7 @@ impl State {
     }
 
     pub fn range(&self) -> (usize, usize) {
-        (self.index, self.index + usize::from(self.width) - 1)
+        (self.index, self.index + usize::from(self.prefs.width) - 1)
     }
 
     pub fn max_index(&self) -> Result<usize, String> {
@@ -629,27 +592,27 @@ impl fmt::Display for State {
         let mut to_write:String;
         to_write = format!("Filename: {}\n", self.filename);
         to_write += &format!("At byte {} of {}\n", lino(&self),
-                hex_unless_dec_with_radix(self.all_bytes.len(), self.radix));
-        if self.show_byte_numbers {
+                hex_unless_dec_with_radix(self.all_bytes.len(), self.prefs.radix));
+        if self.prefs.show_byte_numbers {
             to_write += &format!("Printing byte numbers in {}\n",
-                string_from_radix(self.radix));
+                string_from_radix(self.prefs.radix));
         };
-        if self.show_chars {
+        if self.prefs.show_chars {
             to_write += &format!("Printing char representations after bytes\n");
         };
         to_write += &format!("Interpreting input numbers as {}\n",
-                string_from_radix(self.radix));
+                string_from_radix(self.prefs.radix));
         to_write += &format!("Printing a newline every {} bytes\n",
-                hex_unless_dec_with_radix(usize::from(self.width), self.radix));
+                hex_unless_dec_with_radix(usize::from(self.prefs.width), self.prefs.radix));
 
-        if self.before_context > 0 {
+        if self.prefs.before_context > 0 {
             to_write += &format!("Printing {} lines before current line\n",
-            hex_unless_dec_with_radix(self.before_context, self.radix));
+            hex_unless_dec_with_radix(self.prefs.before_context, self.prefs.radix));
         };
 
-        if self.after_context > 0 {
+        if self.prefs.after_context > 0 {
             to_write += &format!("Printing {} lines after current line\n",
-            hex_unless_dec_with_radix(self.after_context, self.radix));
+            hex_unless_dec_with_radix(self.prefs.after_context, self.prefs.radix));
         };
 
         if self.unsaved_changes {
@@ -763,7 +726,7 @@ pub fn move_to(state:&mut State, index:usize) -> Result<usize, String> {
         };
 
         if index > _max_index {
-            Err(format!("{} > {} = maximum index", hex_unless_dec_with_radix(index, state.radix), hex_unless_dec_with_radix(_max_index, state.radix)))
+            Err(format!("{} > {} = maximum index", hex_unless_dec_with_radix(index, state.prefs.radix), hex_unless_dec_with_radix(_max_index, state.prefs.radix)))
         }
         else {
             state.index = index;
@@ -802,22 +765,23 @@ mod tests {
                 0x12,
             ];
         let mut state = State {
-            radix: 16,
-            show_byte_numbers: true,
-            show_chars: true,
+            prefs: Preferences {
+                radix: 16,
+                show_byte_numbers: true,
+                show_chars: true,
+                show_prompt: true,
+                color: true,
+                width: NonZeroUsize::new(0x10).unwrap(),
+                n_padding: "   ".to_owned(),
+                after_context: 0,
+                before_context: 0,
+            },
             unsaved_changes: true,
+            index: 0,
             readonly: false,
             last_search: None,
             filename: "filename".to_owned(),
-            show_prompt: true,
-            color: true,
-            index: 0,
-            // height: NonZeroUsize::new(1).unwrap(),
-            width: NonZeroUsize::new(0x10).unwrap(),
             all_bytes: Vec::from(hex_twelve),
-            n_padding: "   ".to_owned(),
-            after_context: 0,
-            before_context: 0,
         };
 
         assert_eq!(state.bytes_from(0), &hex_twelve[0x00..=0x0f]);
@@ -832,7 +796,7 @@ mod tests {
         assert_eq!(state.bytes_from(17), &hex_twelve[0x11..=0x12]);
         assert_eq!(state.bytes_from(18), &hex_twelve[0x12..=0x12]);
         assert_eq!(state.bytes_from(19), &hex_twelve[0..0]);
-        state.width = NonZeroUsize::new(3).unwrap();
+        state.prefs.width = NonZeroUsize::new(3).unwrap();
         assert_eq!(state.bytes_from(0), &hex_twelve[0x00..=0x02]);
         assert_eq!(state.bytes_from(1), &hex_twelve[0x01..=0x03]);
         assert_eq!(state.bytes_from(11), &hex_twelve[0x0b..=0x0d]);
@@ -844,19 +808,22 @@ mod tests {
     #[test]
     fn test_byte_numbers() {
         let mut state = State {
-            radix: 16,
-            show_byte_numbers: true,
-            show_chars: true,
+            prefs: Preferences {
+                radix: 16,
+                show_byte_numbers: true,
+                show_chars: true,
+                show_prompt: true,
+                color: true,
+                after_context: 0,
+                before_context: 0,
+                width: NonZeroUsize::new(0x10).unwrap(),
+                n_padding: "   ".to_owned(),
+            },
             unsaved_changes: true,
             readonly: false,
             last_search: None,
             filename: "filename".to_owned(),
-            show_prompt: true,
-            color: true,
             index: 0,
-            after_context: 0,
-            before_context: 0,
-            width: NonZeroUsize::new(0x10).unwrap(),
             all_bytes: vec![
                 0x00, 0x01, 0x02,
                 0x03, 0x04, 0x05,
@@ -866,7 +833,6 @@ mod tests {
                 0x0f, 0x10, 0x11,
                 0x12,
             ],
-            n_padding: "   ".to_owned(),
         };
         assert_eq!(state.addresses(0x00),
             vec![0x00, 0x10]);
@@ -874,7 +840,7 @@ mod tests {
             vec![0x01, 0x11]);
         assert_eq!(state.addresses(0x04),
             vec![0x04]);
-        state.width = NonZeroUsize::new(3).unwrap();
+        state.prefs.width = NonZeroUsize::new(3).unwrap();
         assert_eq!(state.addresses(0x04),
             vec![0x04, 0x07, 0x0a, 0x0d, 0x10,]);
     }
