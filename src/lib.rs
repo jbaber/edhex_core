@@ -5,12 +5,14 @@ use regex::Regex;
 use serde::{Serialize, Deserialize};
 use std::cmp::min;
 use std::convert::From;
+use std::env;
 use std::fmt;
 use std::fs;
 use std::fs::File;
 use std::io::Read;
 use std::num::NonZeroUsize;
 use std::path::Path;
+use std::path::PathBuf;
 use thiserror::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -75,6 +77,38 @@ pub const COLOR_ASCII_PRINTABLE: Color = Color::Cyan;
 pub const COLOR_ASCII_WHITESPACE: Color = Color::Green;
 pub const COLOR_ASCII_OTHER: Color = Color::Purple;
 pub const COLOR_NONASCII: Color = Color::Yellow;
+
+
+/// Per [XDG Base Directory Specification], dotfiles should go to
+/// $XDG_CONFIG_HOME if it exists, and $HOME/.config if it doesn't.
+///
+/// [XDG Base Directory Specification]: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+pub fn preferences_file_path() -> PathBuf {
+    let xdg_config_home = env::var("XDG_CONFIG_HOME");
+    let home = env::var("HOME");
+
+    let edhex_s = String::from("edhex");
+    let prefs_s = String::from("preferences");
+
+    if xdg_config_home.is_ok() {
+        let mut return_if_good = PathBuf::from(xdg_config_home.unwrap());
+
+        /* Spec says it must be absolute or ignored */
+        if return_if_good.is_absolute() {
+            return_if_good.push(edhex_s);
+            return_if_good.push(prefs_s);
+            return return_if_good;
+        }
+    }
+
+    let dotconf_s = String::from(".config");
+    if home.is_ok() {
+        [home.unwrap(), dotconf_s, edhex_s, prefs_s].iter().collect()
+    }
+    else {
+        [".".to_owned(), dotconf_s, edhex_s, prefs_s].iter().collect()
+    }
+}
 
 
 /// TODO Per https://doc.rust-lang.org/std/io/enum.ErrorKind.html
