@@ -282,6 +282,28 @@ pub struct Preferences {
 }
 
 
+impl Preferences {
+    /// Serialize to a json blob.
+    pub fn write_to_disk(&self, filename: &str) -> Result<(), String> {
+        let serialized = serde_json::to_string_pretty(&self);
+
+        if serialized.is_err() {
+            return Err("? Could not serialize preferences.".to_owned());
+        }
+        let serialized = serialized.unwrap();
+
+        let result = std::fs::write(filename, &serialized);
+
+        if result.is_err() {
+            Err(format!("? Couldn't write to {}", filename))
+        }
+        else {
+            Ok(())
+        }
+    }
+}
+
+
 pub struct State {
     pub prefs: Preferences,
     pub unsaved_changes: bool,
