@@ -283,7 +283,6 @@ pub struct Preferences {
 
 
 impl Preferences {
-    /// Serialize to a json blob.
     pub fn write_to_disk(&self, filename: &str) -> Result<(), String> {
         let serialized = serde_json::to_string_pretty(&self);
 
