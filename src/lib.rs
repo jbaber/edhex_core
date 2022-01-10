@@ -657,40 +657,50 @@ impl State {
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut to_write:String;
-        to_write = format!("Filename: {}\n", self.filename);
-        to_write += &format!("At byte {} of {}\n", lino(&self),
+        to_write = "State:\n".to_owned();
+        to_write += &format!("  Filename: {}\n", self.filename);
+        to_write += &format!("  At byte {} of {}\n", lino(&self),
                 hex_unless_dec_with_radix(self.all_bytes.len(), self.prefs.radix));
+        if self.unsaved_changes {
+            to_write += &format!("  Unwritten changes\n");
+        }
+        else {
+            to_write += &format!("  No unwritten changes\n");
+        }
+        if self.readonly {
+            to_write += &format!("  In read-only mode\n");
+        }
+
+        to_write += "  Preferences:\n";
+
         if self.prefs.show_byte_numbers {
-            to_write += &format!("Printing byte numbers in {}\n",
+            to_write += &format!("    Printing byte numbers in {}\n",
                 string_from_radix(self.prefs.radix));
         };
         if self.prefs.show_chars {
-            to_write += &format!("Printing char representations after bytes\n");
+            to_write +=
+                    &format!("    Printing char representations after bytes\n");
         };
-        to_write += &format!("Interpreting input numbers as {}\n",
+        to_write += &format!("    Interpreting input numbers as {}\n",
                 string_from_radix(self.prefs.radix));
-        to_write += &format!("Printing a newline every {} bytes\n",
-                hex_unless_dec_with_radix(usize::from(self.prefs.width), self.prefs.radix));
-
+        to_write += &format!("    Printing a newline every {} bytes\n",
+                hex_unless_dec_with_radix(usize::from(self.prefs.width),
+                        self.prefs.radix));
         if self.prefs.before_context > 0 {
-            to_write += &format!("Printing {} lines before current line\n",
-            hex_unless_dec_with_radix(self.prefs.before_context, self.prefs.radix));
+            to_write += &format!("    Printing {} lines before current line\n",
+            hex_unless_dec_with_radix(self.prefs.before_context,
+                    self.prefs.radix));
         };
-
         if self.prefs.after_context > 0 {
-            to_write += &format!("Printing {} lines after current line\n",
-            hex_unless_dec_with_radix(self.prefs.after_context, self.prefs.radix));
+            to_write += &format!("    Printing {} lines after current line\n",
+            hex_unless_dec_with_radix(self.prefs.after_context,
+                    self.prefs.radix));
         };
-
-        if self.unsaved_changes {
-            to_write += &format!("Unwritten changes\n")
-        }
-        else {
-            to_write += &format!("No unwritten changes\n")
-        }
-
-        if self.readonly {
-            to_write += &format!("In read-only mode\n")
+        if self.prefs.color {
+            to_write += &format!("    Using {}{}{}{}{}", Color::Red.paint("c"),
+                    Color::Yellow.paint("o"), Color::Green.paint("l"),
+                    Color::Blue.paint("o"), Color::Purple.paint("r")
+                    );
         }
 
         write!(f, "{}", to_write)
