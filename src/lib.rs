@@ -517,7 +517,9 @@ impl State {
     pub fn bytes_line_padding(&self, bytes:&[u8], line_num:usize) -> String{
         let mut to_return = String::new();
         let expected_length = usize::from(self.prefs.width) * 3 - 1;
-        for _ in num_graphemes(&self.bytes_line(bytes, line_num, false))..expected_length {
+        let actual_length = bytes_line_bytes(bytes, line_num,
+                self.prefs.width).len() * 3 - 1;
+        for _ in actual_length..expected_length {
             to_return += " ";
         }
 
