@@ -302,14 +302,20 @@ impl Preferences {
     }
 
 
-    pub fn read_from_disk(filename: &str) -> Result<Preferences, String> {
-        if let Ok(from_disk) = fs::read_to_string(Path::new(filename)) {
+    pub fn read_from_filename(filename: &str) -> Result<Preferences, String> {
+        Self::read_from_path(Path::new(filename))
+    }
+
+
+    pub fn read_from_path(path: &Path) -> Result<Preferences, String> {
+        if let Ok(from_disk) = fs::read_to_string(path) {
             serde_json::from_str(&from_disk).or_else(
-                |_| Err(format!("Could not read preferences from {}", filename))
+                |_| Err(format!("Could not read preferences from {}",
+                        path.display()))
             )
         }
         else {
-            Err(format!("Couldn't read {}", filename))
+            Err(format!("Couldn't read {}", path.display()))
         }
     }
 }
