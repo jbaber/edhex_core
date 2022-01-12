@@ -378,6 +378,18 @@ impl fmt::Debug for State {
 
 
 impl State {
+    pub fn pretty_color_state(&self) -> String {
+        if self.prefs.color {
+            format!("{}{}{}{}{}", Color::Red.paint("c"),
+                    Color::Yellow.paint("o"), Color::Green.paint("l"),
+                    Color::Blue.paint("o"), Color::Purple.paint("r"))
+        }
+        else {
+            "color".to_owned()
+        }
+    }
+
+
     /// Return the byte numbers necessary for the left column of a display
     pub fn addresses(&self, from:usize) -> Vec<usize> {
         // TODO Do this with a generator once
@@ -697,10 +709,10 @@ impl fmt::Display for State {
                     self.prefs.radix));
         };
         if self.prefs.color {
-            to_write += &format!("    Using {}{}{}{}{}", Color::Red.paint("c"),
-                    Color::Yellow.paint("o"), Color::Green.paint("l"),
-                    Color::Blue.paint("o"), Color::Purple.paint("r")
-                    );
+            to_write += &format!("    Using {}", self.pretty_color_state());
+        }
+        else {
+            to_write += "    Printing without color";
         }
 
         write!(f, "{}", to_write)
