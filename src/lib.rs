@@ -359,6 +359,22 @@ impl Preferences {
             Err(format!("Couldn't read {}", path.display()))
         }
     }
+
+
+    pub fn default() -> Self {
+        Self {
+            radix: 16,
+            show_byte_numbers: true,
+            show_prompt: true,
+            color: true,
+            show_chars: true,
+            before_context: 0,
+            after_context: 0,
+            width: NonZeroUsize::new(16).unwrap(),
+            // TODO calculate based on longest possible index
+            n_padding: "      ".to_owned(),
+        }
+    }
 }
 
 
