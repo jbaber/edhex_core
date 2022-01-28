@@ -113,6 +113,38 @@ pub fn preferences_file_path() -> PathBuf {
 }
 
 
+/// Per [XDG Base Directory Specification], state files should go to
+/// $XDG_STATE_HOME if it exists, and $HOME/.local/state if it doesn't.
+///
+/// [XDG Base Directory Specification]: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+pub fn state_file_path() -> PathBuf {
+    let xdg_state_home = env::var("XDG_STATE_HOME");
+    let home = env::var("HOME");
+
+    let edhex_s = String::from("edhex");
+    let state_s = String::from("state");
+
+    if xdg_state_home.is_ok() {
+        let mut return_if_good = PathBuf::from(xdg_state_home.unwrap());
+
+        /* Spec says it must be absolute or ignored */
+        if return_if_good.is_absolute() {
+            return_if_good.push(edhex_s);
+            return_if_good.push(state_s);
+            return return_if_good;
+        }
+    }
+
+    let dotlocal_s = String::from(".local");
+    if home.is_ok() {
+        [home.unwrap(), dotlocal_s, state_s, edhex_s].iter().collect()
+    }
+    else {
+        [".".to_owned(), dotlocal_s, state_s, edhex_s].iter().collect()
+    }
+}
+
+
 /// TODO Per https://doc.rust-lang.org/std/io/enum.ErrorKind.html
 /// IsADirectory isn't available yet.  Check against it when it is.
 pub fn is_a_regular_file(filename: &str) -> bool {
@@ -392,6 +424,38 @@ impl fmt::Debug for State {
 }
 
 
+impl DiskWritable for &State {
+    /// Serialize to a json blob.
+    /// Don't include all_bytes, not only because it could be huge, but
+    /// because if you load a state from disk and its bytes differ from
+    /// the actual file's on disk bytes, neither collection of bytes are
+    /// canonical.  User's can write out bytes to other files at will.
+    fn write_to_disk(self, filename: &str) -> Result<(), String> {
+
+        /* NOTICE: To exclude all_bytes, we have to list all the keys
+        *  we want to save.  There is no reasonable, general way to
+        *  iterate through all keys in a struct.
+        *  When State changes what you'd want to save off, you have to
+        *  change what this function saves off, too. */
+        let serialized = serde_json::to_string_pretty(&StateSansBytes::from(self));
+
+        if serialized.is_err() {
+            return Err("? Could not serialize state.".to_owned());
+        }
+        let serialized = serialized.unwrap();
+
+        let result = std::fs::write(filename, &serialized);
+
+        if result.is_err() {
+            Err(format!("? Couldn't write to {}", filename))
+        }
+        else {
+            Ok(())
+        }
+    }
+}
+
+
 impl State {
     pub fn pretty_color_state(&self) -> String {
         if self.prefs.color {
@@ -417,13 +481,18 @@ impl State {
     }
 
 
+    pub fn read_from_filename(filename: &str) -> Result<Self, String> {
+        Self::read_from_path(Path::new(filename))
+    }
+
+
     /// Note:  For the forseeable future, from_reader is actually slower
     /// than drawing the entire file into memory.  So until that changes,
     /// doing the latter:  https://github.com/serde-rs/json/issues/160
-    pub fn from_filename(filename: &str) -> Result<Self, String> {
-        let state_sans_bytes_s = fs::read_to_string(filename);
+    pub fn read_from_path(path: &Path) -> Result<Self, String> {
+        let state_sans_bytes_s = fs::read_to_string(path);
         if state_sans_bytes_s.is_err() {
-            return Err(format!("Problem opening '{}' ({:?})", filename,
+            return Err(format!("Problem opening '{}' ({:?})", path.display(),
                     state_sans_bytes_s));
         }
         let state_sans_bytes_s = state_sans_bytes_s.unwrap();
@@ -442,38 +511,8 @@ impl State {
         else {
             Err(format!(
                 "State in file '{}' said to find the bytes in '{}', but
-                    couldn't read '{}'.", filename, state_sans_bytes.filename,
+                    couldn't read '{}'.", path.display(), state_sans_bytes.filename,
                     state_sans_bytes.filename))
-        }
-    }
-
-
-    /// Serialize to a json blob.
-    /// Don't include all_bytes, not only because it could be huge, but
-    /// because if you load a state from disk and its bytes differ from
-    /// the actual file's on disk bytes, neither collection of bytes are
-    /// canonical.  User's can write out bytes to other files at will.
-    pub fn write_to_disk(&self, filename: &str) -> Result<(), String> {
-
-        /* NOTICE: To exclude all_bytes, we have to list all the keys
-        *  we want to save.  There is no reasonable, general way to
-        *  iterate through all keys in a struct.
-        *  When State changes what you'd want to save off, you have to
-        *  change what this function saves off, too. */
-        let serialized = serde_json::to_string_pretty(&StateSansBytes::from(self));
-
-        if serialized.is_err() {
-            return Err("? Could not serialize state.".to_owned());
-        }
-        let serialized = serialized.unwrap();
-
-        let result = std::fs::write(filename, &serialized);
-
-        if result.is_err() {
-            Err(format!("? Couldn't write to {}", filename))
-        }
-        else {
-            Ok(())
         }
     }
 
@@ -1246,3 +1285,91 @@ pub fn filehandle(filename:&str) -> Result<Option<File>, String> {
         },
     }
 }
+
+
+pub fn get_input_or_die() -> Result<String, i32> {
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_num_bytes) => {
+
+            /* EOF Return error of 0 to indicate time for a clean exit.  */
+            if _num_bytes == 0 {
+                Err(0)
+            }
+            else {
+                Ok(input.trim().to_string())
+            }
+        }
+        Err(_) => {
+            println!("Unable to read input");
+            Err(3)
+        }
+    }
+}
+
+
+pub fn read_string_from_user(prompt: Option<&str>) -> Result<String, String> {
+    print!("{}", if prompt.is_none() {
+            "> "
+        }
+        else {
+            prompt.unwrap()
+        }
+    );
+
+    io::stdout().flush().unwrap();
+    let result = get_input_or_die();
+
+    if result.is_ok() {
+        Ok(result.unwrap())
+    }
+
+    /* Consider EOF empty string */
+    else if result == Err(0) {
+        Ok("".to_owned())
+    }
+
+    else {
+        Err("Couldn't read input from user".to_owned())
+    }
+}
+
+
+pub fn save_to_path_or_default<T: DiskWritable>(to_be_saved: T, prompt: &str,
+        default_path: PathBuf) {
+    let filename = read_string_from_user(Some(&format!(
+            "{} [{}]: ", prompt, default_path.display())));
+
+    if filename.is_ok() {
+        let mut filename = filename.unwrap();
+        if filename == "" {
+            if let Some(default_path_s) = default_path.to_str() {
+                filename = default_path_s.to_owned();
+
+                /* In the default case, we're brave enough to create
+                 * the parent directory for the file if it's not root */
+                if let Some(parent_dir) = default_path.parent() {
+                    if let Err(error) = fs::create_dir_all(parent_dir) {
+                        println!("? Couldn't create director {} ({:?})",
+                                parent_dir.display(), error);
+                    }
+                }
+            }
+            else {
+                println!("? Default path ({}) is not valid unicode.",
+                        default_path.display());
+                return;
+            }
+        }
+
+        let result = to_be_saved.write_to_disk(&filename);
+        if let Err(error) = result {
+            println!("? {:?}", error);
+        }
+    }
+    else {
+        println!("? {:?}", filename);
+    }
+}
+
+
