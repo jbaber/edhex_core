@@ -9,7 +9,9 @@ use std::env;
 use std::fmt;
 use std::fs;
 use std::fs::File;
+use std::io;
 use std::io::Read;
+use std::io::Write;
 use std::num::NonZeroUsize;
 use std::path::Path;
 use std::path::PathBuf;
@@ -282,8 +284,13 @@ pub struct Preferences {
 }
 
 
-impl Preferences {
-    pub fn write_to_disk(&self, filename: &str) -> Result<(), String> {
+pub trait DiskWritable {
+    fn write_to_disk(self, filename: &str) -> Result<(), String>;
+}
+
+
+impl DiskWritable for &Preferences {
+    fn write_to_disk(self, filename: &str) -> Result<(), String> {
         let serialized = serde_json::to_string_pretty(&self);
 
         if serialized.is_err() {
@@ -300,8 +307,10 @@ impl Preferences {
             Ok(())
         }
     }
+}
 
 
+impl Preferences {
     pub fn read_from_filename(filename: &str) -> Result<Preferences, String> {
         Self::read_from_path(Path::new(filename))
     }
