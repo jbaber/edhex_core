@@ -1387,5 +1387,3 @@ pub fn save_to_path_or_default<T: DiskWritable>(to_be_saved: T, prompt: &str,
         println!("? {:?}", filename);
     }
 }
-
-
