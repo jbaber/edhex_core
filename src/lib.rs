@@ -699,8 +699,43 @@ impl State {
     }
 
 
-    /// returns index of the byte in the 0-th column of the main row printed
-    /// (not the context rows)
+    pub fn print_bytes_and_move_index(&mut self) {
+        if let Some(last_byte_index) = self.print_bytes() {
+            if let Ok(max) = self.max_index() {
+                let new_index = min(last_byte_index + 1, max);
+                self.index = new_index;
+            }
+            else {
+                println!("? (No bytes)");
+            }
+        }
+        else {
+            println!("? (unknown error)");
+        }
+    }
+
+
+    pub fn move_index_then_print_bytes(&mut self) {
+
+        /* Calculate line_with_break only to get last_byte_index */
+        if let Ok((_, last_byte_index)) = self.line_with_break(self.index,
+                self.all_bytes.len().saturating_sub(1), false) {
+            if let Ok(max) = self.max_index() {
+                let new_index = min(last_byte_index + 1, max);
+                self.index = new_index;
+                self.print_bytes();
+            }
+            else {
+                println!("? (No bytes)");
+            }
+        }
+        else {
+            println!("? (unknown error)");
+        }
+    }
+
+
+    /// returns index of the last byte printed in the non-context line
     pub fn print_bytes(&self) -> Option<usize> {
         if self.empty() {
             return None;
