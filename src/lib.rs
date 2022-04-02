@@ -4,6 +4,7 @@ use ansi_term::Style;
 use regex::Regex;
 use serde::{Serialize, Deserialize};
 use std::cmp::min;
+use std::collections::HashSet;
 use std::convert::From;
 use std::env;
 use std::fmt;
@@ -17,7 +18,6 @@ use std::path::Path;
 use std::path::PathBuf;
 use thiserror::Error;
 use unicode_segmentation::UnicodeSegmentation;
-
 
 /* Byte formatting stuff lifted from hexyl */
 pub enum ByteCategory {
@@ -264,7 +264,7 @@ pub struct StateSansBytes {
     pub readonly: bool,
     pub last_search: Option<Vec<u8>>,
     pub index: usize,
-    pub breaks: Vec<usize>,
+    pub breaks: HashSet<usize>,
 }
 
 
@@ -395,7 +395,7 @@ pub struct State {
     pub all_bytes: Vec<u8>,
 
     /* Bytes at which to insert a break when displaying */
-    pub breaks: Vec<usize>,
+    pub breaks: HashSet<usize>,
 }
 
 
@@ -1082,7 +1082,7 @@ mod tests {
             last_search: None,
             filename: "filename".to_owned(),
             all_bytes: Vec::from(hex_twelve),
-            breaks: Vec::new(),
+            breaks: HashSet::new(),
         };
 
         assert_eq!(state.bytes_from(0), &hex_twelve[0x00..=0x0f]);
@@ -1126,7 +1126,7 @@ mod tests {
             last_search: None,
             filename: "filename".to_owned(),
             index: 0,
-            breaks: Vec::new(),
+            breaks: HashSet::new(),
             all_bytes: vec![
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
                 0x10, 0x11, 0x12,
