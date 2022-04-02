@@ -572,18 +572,17 @@ impl State {
 
     /// Returns the line to print and the index of the last byte printed
     pub fn line_with_break(&self, begin:usize, end:usize, underline:bool)
-        -> Result<(String, usize), String> {
+        -> Option<(String, usize)> {
       if end < begin {
-        return Err(format!("No bytes in empty interval [{},{}]", begin, end));
+        return None;
       }
 
       let all_bytes_length = self.all_bytes.len();
       if all_bytes_length == 0 {
-        return Err("No bytes to show".to_owned());
+        return None;
       }
       if begin + 1 > all_bytes_length {
-        return Err(format!("{} is past the last byte ({})", begin,
-                all_bytes_length.saturating_sub(1)));
+        return None;
       }
 
       let mut to_return = String::new();
@@ -644,7 +643,7 @@ impl State {
         }
       }
 
-      Ok((to_return, begin + num_shown - 1))
+      Some((to_return, begin + num_shown - 1))
     }
 
 
@@ -700,7 +699,7 @@ impl State {
 
 
     pub fn print_bytes_and_move_index(&mut self) {
-        if let Some(last_byte_index) = self.print_bytes() {
+        if let Some(last_byte_index) = self.print_bytes(true) {
             if let Ok(max) = self.max_index() {
                 let new_index = min(last_byte_index + 1, max);
                 self.index = new_index;
@@ -711,32 +710,65 @@ impl State {
         }
         else {
             println!("? (unknown error)");
+        }
+    }
+
+
+    pub fn index_of_byte_after(&self, index:usize) -> Option<usize> {
+        let would_be = index + 1;
+        if let Ok(max) = self.max_index() {
+            if would_be > max {
+                None
+            }
+            else {
+                Some(would_be)
+            }
+        }
+        else {
+            None
+        }
+    }
+
+
+
+    pub fn index_of_next_byte(&self) -> Option<usize> {
+        self.index_of_byte_after(self.index)
+    }
+
+    
+    pub fn index_of_next_line(&self) -> Option<usize> {
+
+        // TODO Replace this with direct calculation, then
+        // call it inside line_with_break
+        /* Calculate line_with_break only to get last_byte_index */
+        if let Some((_, last_byte_index)) = self.line_with_break(self.index,
+                self.all_bytes.len().saturating_sub(1), false) {
+            if let Ok(max) = self.max_index() {
+                Some(min(last_byte_index + 1, max))
+            }
+            else {
+                None
+            }
+        }
+        else {
+            None
         }
     }
 
 
     pub fn move_index_then_print_bytes(&mut self) {
-
-        /* Calculate line_with_break only to get last_byte_index */
-        if let Ok((_, last_byte_index)) = self.line_with_break(self.index,
-                self.all_bytes.len().saturating_sub(1), false) {
-            if let Ok(max) = self.max_index() {
-                let new_index = min(last_byte_index + 1, max);
-                self.index = new_index;
-                self.print_bytes();
-            }
-            else {
-                println!("? (No bytes)");
-            }
+        if let Some(next_index) = self.index_of_next_line() {
+            self.index = next_index;
+            self.print_bytes(true);
         }
         else {
-            println!("? (unknown error)");
+            println!("? No bytes after current line");
         }
     }
 
 
     /// returns index of the last byte printed in the non-context line
-    pub fn print_bytes(&self) -> Option<usize> {
+    pub fn print_bytes(&self, underline_main_bytes:bool) -> Option<usize> {
         if self.empty() {
             return None;
         }
@@ -748,31 +780,34 @@ impl State {
         }
         let max = max.unwrap();
 
-        // TODO do this more prettily
-        // [a..b] before_context bytes
-        // [c..d]  actual bytes
-        // [e..f]  after_context bytes
-        let a = self.index.saturating_sub(self.prefs.before_context * usize::from(self.prefs.width));
-        let b = self.index.saturating_sub(1);
-        let cd = self.range_from_current_row();
-        if cd.is_err() {
-            return None;
+        /* Print the main line, underlined */
+        if let Some((line, last_byte_index)) = self.line_with_break(self.index,
+                self.all_bytes.len().saturating_sub(1), underline_main_bytes) {
+            println!("{}", line);
+            Some(last_byte_index)
         }
-        let (c, d) = cd.unwrap();
-        let e = d + 1;
-        let f = min(max, self.index + (self.prefs.after_context + 1) * usize::from(self.prefs.width) - 1);
+        else {
+            None
+        }
+    }
 
-        /* Call the more specific function */
-        if self.prefs.before_context > 0 && self.index > 0 {
-            self.print_bytes_sans_context((a, b), false);
-        }
-        self.print_bytes_sans_context((c, d),
-                self.prefs.before_context > 0 || self.prefs.after_context > 0);
-        if self.prefs.after_context > 0 {
-            self.print_bytes_sans_context((e, f), false);
-        }
 
-        return Some(min(max, self.index + usize::from(self.prefs.width)));
+    pub fn byte_indices_between(&self, range:(usize, usize)) ->
+            Option<(usize, usize)> {
+        if self.empty() {
+            None
+        }
+        else if let Ok(max) = self.max_index() {
+            if range.0 > max {
+                None
+            }
+            else {
+                Some((range.0, min(max, range.1)))
+            }
+        }
+        else {
+            None
+        }
     }
 
 
@@ -796,45 +831,30 @@ impl State {
         Ok(&self.all_bytes[from..=to])
     }
 
-    /// returns index of the byte in the 0-th column of the last row printed
+    /// returns index of the first byte printed on the last line
     /// This is more primitive than `print_bytes`.  It just prints the bytes
     /// from the range.
     pub fn print_bytes_sans_context(&self, range:(usize, usize),
             underline:bool) -> Option<usize> {
-        let bytes = self.bytes_in_range((range.0, range.1));
-        if bytes.is_err() {
-            return None;
-        }
-        let bytes = bytes.unwrap();
-
-        let max_bytes_line_num = max_bytes_line_num(bytes, self.prefs.width);
-        let addresses = self.addresses(range.0);
-        if addresses.len() == 0 {
-            return None;
-        }
-
-        for bytes_line_num in 0..=max_bytes_line_num {
-            if self.prefs.show_byte_numbers {
-                let to_display = address_display(addresses[bytes_line_num],
-                        self.prefs.radix, &self.prefs.n_padding, underline);
-                print!("{}|", to_display);
+        if let Some(range) = self.byte_indices_between((range.0, range.1)) {
+            let mut from = range.0;
+            let mut last_from = range.0;
+            loop {
+                if let Some((line, last_byte_index)) = self.line_with_break(
+                        from, range.1, false) {
+                    println!("{}", line);
+                    last_from = from;
+                    from = last_byte_index + 1;
+                }
+                else {
+                    break;
+                }
             }
-
-            print!(
-                "{}{}",
-                self.bytes_line(bytes, bytes_line_num, underline),
-                self.bytes_line_padding(bytes, bytes_line_num)
-            );
-
-            if self.prefs.show_chars {
-                print!("|   {}", chars_line(bytes, bytes_line_num, self.prefs.width,
-                    self.prefs.color, underline));
-            }
-
-            println!();
+            Some(last_from)
         }
-
-        Some(addresses[max_bytes_line_num])
+        else {
+            None
+        }
     }
 
 
