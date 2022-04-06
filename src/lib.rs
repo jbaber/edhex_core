@@ -781,7 +781,7 @@ impl State {
     }
 
 
-    pub fn before_context_lines(&self, max_index:usize) -> Vec<String> {
+    pub fn before_context_lines(&self) -> Vec<String> {
         let mut before_lines = vec![];
 
         let prev_byte = self.index_of_prev_byte();
@@ -883,7 +883,7 @@ impl State {
         ;
 
         /* Print before context lines */
-        for before_context_line in self.before_context_lines(max_index) {
+        for before_context_line in self.before_context_lines() {
             println!("{}", before_context_line);
         }
 
