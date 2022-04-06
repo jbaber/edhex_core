@@ -307,6 +307,7 @@ pub struct Preferences {
     pub show_prompt: bool,
     pub color: bool,
     pub width: NonZeroUsize,
+    pub underline_main_line: bool,
 
     /* Spaces to put between a byte number and a byte when displaying */
     pub n_padding: String,
@@ -371,6 +372,7 @@ impl Preferences {
             show_prompt: true,
             color: true,
             show_chars: true,
+            underline_main_line: true,
             before_context: 0,
             after_context: 0,
             width: NonZeroUsize::new(16).unwrap(),
@@ -438,10 +440,10 @@ pub fn hex_unless_dec_with_radix(number:usize, radix:u32) -> String {
 
 impl fmt::Debug for State {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "radix: {}|unsaved_changes: {}|show_byte_numbers: {}|show_chars: {}|index: {}|width: {}|n_padding: '{}'|filename: {}|breaks: {:?}",
+        write!(f, "radix: {}|unsaved_changes: {}|show_byte_numbers: {}|show_chars: {}|index: {}|width: {}|n_padding: '{}'|filename: {}|breaks: {:?}|underline_main_line: {}",
                 self.prefs.radix, self.unsaved_changes, self.prefs.show_byte_numbers,
                 self.prefs.show_chars, self.index, self.prefs.width, self.prefs.n_padding,
-                self.filename, self.breaks)
+                self.filename, self.breaks, self.prefs.underline_main_line)
     }
 }
 
@@ -699,7 +701,7 @@ impl State {
 
 
     pub fn print_bytes_and_move_index(&mut self) {
-        if let Some(last_byte_index) = self.print_bytes(true) {
+        if let Some(last_byte_index) = self.print_bytes() {
             if let Ok(max) = self.max_index() {
                 let new_index = min(last_byte_index + 1, max);
                 self.index = new_index;
@@ -773,7 +775,7 @@ impl State {
     pub fn move_index_then_print_bytes(&mut self) {
         if let Some(next_index) = self.index_of_next_line() {
             self.index = next_index;
-            self.print_bytes(true);
+            self.print_bytes();
         }
         else {
             println!("? No bytes after current line");
@@ -858,7 +860,7 @@ impl State {
 
 
     /// returns index of the last byte printed in the non-context line
-    pub fn print_bytes(&self, underline_main_bytes:bool) -> Option<usize> {
+    pub fn print_bytes(&self) -> Option<usize> {
         if self.empty() {
             return None;
         }
@@ -874,7 +876,7 @@ impl State {
         let (to_return, main_line) =
             if let Some((line, last_byte_index)) =
                 self.line_with_break(self.index, max_index,
-                        underline_main_bytes) {
+                        self.prefs.underline_main_line) {
                 (last_byte_index, line)
             }
             else {
@@ -1019,6 +1021,9 @@ impl fmt::Display for State {
         to_write += &format!("    Printing a newline every {} bytes\n",
                 hex_unless_dec_with_radix(usize::from(self.prefs.width),
                         self.prefs.radix));
+        if self.prefs.underline_main_line {
+            to_write += "    Underlining current line of bytes\n";
+        }
         if self.prefs.before_context > 0 {
             to_write += &format!("    Printing {} lines before current line\n",
             hex_unless_dec_with_radix(self.prefs.before_context,
@@ -1494,6 +1499,7 @@ mod tests {
             prefs: Preferences {
                 radix: 16,
                 show_byte_numbers: true,
+                underline_main_bytes: true,
                 show_chars: true,
                 show_prompt: true,
                 color: false,
