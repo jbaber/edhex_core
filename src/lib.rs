@@ -730,6 +730,20 @@ impl State {
     }
 
 
+    pub fn index_of_byte_before(&self, index:usize) -> Option<usize> {
+        if index < 1 {
+            None
+        }
+        else {
+            Some(index - 1)
+        }
+    }
+
+
+    pub fn index_of_prev_byte(&self) -> Option<usize> {
+        self.index_of_byte_before(self.index)
+    }
+
 
     pub fn index_of_next_byte(&self) -> Option<usize> {
         self.index_of_byte_after(self.index)
@@ -767,6 +781,82 @@ impl State {
     }
 
 
+    pub fn before_context_lines(&self, max_index:usize) -> Vec<String> {
+        let mut before_lines = vec![];
+
+        let prev_byte = self.index_of_prev_byte();
+        if prev_byte.is_none() {
+            return before_lines;
+        }
+        let prev_byte = prev_byte.unwrap();
+
+        let mut cursor = self.index.saturating_sub(
+                self.prefs.before_context * usize::from(self.prefs.width));
+        loop {
+            let mut last_byte_collected = None; 
+
+            if let Some((line, last_byte_index)) =
+                self.line_with_break(cursor, prev_byte, false) {
+                    before_lines.push(line);
+                    last_byte_collected = Some(last_byte_index);
+                }
+            else {
+                break;
+            }
+
+            if last_byte_collected.is_some() {
+                if let Some(new_cursor) =
+                        self.index_of_byte_after(last_byte_collected.unwrap()) {
+                            cursor = new_cursor;
+                        }
+                else {
+                    break;
+                }
+            }
+
+        }
+
+        before_lines
+    }
+
+
+    pub fn after_context_lines(&self, first_after_context_index:usize,
+            max_index:usize) -> Vec<String> {
+        let mut after_context_collected = 0;
+        let mut to_return = vec![];
+
+        let mut cursor = first_after_context_index;
+
+        loop {
+            let last_byte_collected =
+                if let Some((line, last_byte_index)) =
+                    self.line_with_break(cursor, max_index, false) {
+                        if after_context_collected < self.prefs.after_context {
+                            to_return.push(line);
+                            after_context_collected += 1;
+                        }
+                        else {
+                            break;
+                        }
+                        last_byte_index
+                }
+                else {
+                    break;
+                }
+            ;
+            cursor = if let Some(new_cursor) =
+                    self.index_of_byte_after(last_byte_collected) {
+                new_cursor
+            }
+            else {
+                break;
+            }
+        }
+
+        to_return
+    }
+
+
     /// returns index of the last byte printed in the non-context line
     pub fn print_bytes(&self, underline_main_bytes:bool) -> Option<usize> {
         if self.empty() {
@@ -780,51 +870,31 @@ impl State {
         }
         let max_index = max_index.unwrap();
 
-        /* Print the main line, underlined */
-        let to_return =
+        /* Gather up the main line underlined or quit */
+        let (to_return, main_line) =
             if let Some((line, last_byte_index)) =
                 self.line_with_break(self.index, max_index,
                         underline_main_bytes) {
-                println!("{}", line);
-                last_byte_index
+                (last_byte_index, line)
             }
             else {
                 return None;
             }
         ;
 
-
-        /* Print `after_context` lines of succeeding bytes */
-        let mut after_context_printed = 0;
-        let cursor = self.index_of_byte_after(to_return);
-        if cursor.is_none() {
-            return Some(to_return);
+        /* Print before context lines */
+        for before_context_line in self.before_context_lines(max_index) {
+            println!("{}", before_context_line);
         }
-        let mut cursor = cursor.unwrap();
 
-        loop {
-            let last_byte_printed =
-                if let Some((line, last_byte_index)) =
-                    self.line_with_break(cursor, max_index, false) {
-                        if after_context_printed < self.prefs.after_context {
-                            println!("{}", line);
-                            after_context_printed += 1;
-                        }
-                        else {
-                            break;
-                        }
-                        last_byte_index
-                }
-                else {
-                    break;
-                }
-            ;
-            cursor = if let Some(new_cursor) =
-                    self.index_of_byte_after(last_byte_printed) {
-                new_cursor
-            }
-            else {
-                break;
+        println!("{}", main_line);
+
+        /* If there are after context lines, print them */
+        if let Some(first_after_context_index) =
+                self.index_of_byte_after(to_return) {
+            for after_context_line in self.after_context_lines(
+                    first_after_context_index, max_index) {
+                println!("{}", after_context_line);
             }
         }
 
