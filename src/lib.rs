@@ -773,22 +773,62 @@ impl State {
             return None;
         }
 
-        let max = self.max_index();
-        if max.is_err() {
-            println!("? ({:?})", max);
+        let max_index = self.max_index();
+        if max_index.is_err() {
+            println!("? ({:?})", max_index);
             return None;
         }
-        let max = max.unwrap();
+        let max_index = max_index.unwrap();
 
         /* Print the main line, underlined */
-        if let Some((line, last_byte_index)) = self.line_with_break(self.index,
-                self.all_bytes.len().saturating_sub(1), underline_main_bytes) {
-            println!("{}", line);
-            Some(last_byte_index)
+        let to_return =
+            if let Some((line, last_byte_index)) =
+                self.line_with_break(self.index, max_index,
+                        underline_main_bytes) {
+                println!("{}", line);
+                last_byte_index
+            }
+            else {
+                return None;
+            }
+        ;
+
+
+        /* Print `after_context` lines of succeeding bytes */
+        let mut after_context_printed = 0;
+        let cursor = self.index_of_byte_after(to_return);
+        if cursor.is_none() {
+            return Some(to_return);
         }
-        else {
-            None
+        let mut cursor = cursor.unwrap();
+
+        loop {
+            let last_byte_printed =
+                if let Some((line, last_byte_index)) =
+                    self.line_with_break(cursor, max_index, false) {
+                        if after_context_printed < self.prefs.after_context {
+                            println!("{}", line);
+                            after_context_printed += 1;
+                        }
+                        else {
+                            break;
+                        }
+                        last_byte_index
+                }
+                else {
+                    break;
+                }
+            ;
+            cursor = if let Some(new_cursor) =
+                    self.index_of_byte_after(last_byte_printed) {
+                new_cursor
+            }
+            else {
+                break;
+            }
         }
+
+        return Some(to_return);
     }
 
 
@@ -834,8 +874,8 @@ impl State {
     /// returns index of the first byte printed on the last line
     /// This is more primitive than `print_bytes`.  It just prints the bytes
     /// from the range.
-    pub fn print_bytes_sans_context(&self, range:(usize, usize),
-            underline:bool) -> Option<usize> {
+    pub fn print_bytes_sans_context(&self, range:(usize, usize)) ->
+            Option<usize> {
         if let Some(range) = self.byte_indices_between((range.0, range.1)) {
             let mut from = range.0;
             let mut last_from = range.0;
