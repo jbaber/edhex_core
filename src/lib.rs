@@ -19,6 +19,8 @@ use std::path::PathBuf;
 use thiserror::Error;
 use unicode_segmentation::UnicodeSegmentation;
 
+pub static DEFAULT_WIDTH:usize = 16;
+
 /* Byte formatting stuff lifted from hexyl */
 pub enum ByteCategory {
     Null,
@@ -375,7 +377,7 @@ impl Preferences {
             underline_main_line: true,
             before_context: 0,
             after_context: 0,
-            width: NonZeroUsize::new(16).unwrap(),
+            width: NonZeroUsize::new(DEFAULT_WIDTH).unwrap(),
             // TODO calculate based on longest possible index
             n_padding: "      ".to_owned(),
         }
