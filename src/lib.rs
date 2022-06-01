@@ -1187,6 +1187,7 @@ mod tests {
                 show_byte_numbers: true,
                 show_chars: true,
                 show_prompt: true,
+                underline_main_line: true,
                 color: true,
                 width: NonZeroUsize::new(0x10).unwrap(),
                 n_padding: "   ".to_owned(),
@@ -1228,6 +1229,7 @@ mod tests {
         let mut states = Vec::new();
         states.push(State {
             prefs: Preferences {
+                underline_main_line: true,
                 radix: 16,
                 show_byte_numbers: true,
                 show_chars: true,
@@ -1250,258 +1252,258 @@ mod tests {
             ],
         });
 
-        assert_eq!(states[0].line_with_break(0x00, 0x00, false), Ok(("    0   |00                                             |   •".to_owned(), 0x00)));
-        assert_eq!(states[0].line_with_break(0x00, 0x01, false), Ok(("    0   |00 01                                          |   ••".to_owned(), 0x01)));
-        assert_eq!(states[0].line_with_break(0x00, 0x02, false), Ok(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
-        assert_eq!(states[0].line_with_break(0x00, 0x03, false), Ok(("    0   |00 01 02 03                                    |   ••••".to_owned(), 0x03)));
-        assert_eq!(states[0].line_with_break(0x00, 0x04, false), Ok(("    0   |00 01 02 03 04                                 |   •••••".to_owned(), 0x04)));
-        assert_eq!(states[0].line_with_break(0x00, 0x05, false), Ok(("    0   |00 01 02 03 04 05                              |   ••••••".to_owned(), 0x05)));
-        assert_eq!(states[0].line_with_break(0x00, 0x06, false), Ok(("    0   |00 01 02 03 04 05 06                           |   •••••••".to_owned(), 0x06)));
-        assert_eq!(states[0].line_with_break(0x00, 0x07, false), Ok(("    0   |00 01 02 03 04 05 06 07                        |   ••••••••".to_owned(), 0x07)));
-        assert_eq!(states[0].line_with_break(0x00, 0x08, false), Ok(("    0   |00 01 02 03 04 05 06 07 08                     |   •••••••••".to_owned(), 0x08)));
-        assert_eq!(states[0].line_with_break(0x00, 0x09, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09                  |   •••••••••_".to_owned(), 0x09)));
-        assert_eq!(states[0].line_with_break(0x00, 0x0a, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a               |   •••••••••__".to_owned(), 0x0a)));
-        assert_eq!(states[0].line_with_break(0x00, 0x0b, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b            |   •••••••••__•".to_owned(), 0x0b)));
-        assert_eq!(states[0].line_with_break(0x00, 0x0c, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c         |   •••••••••__•_".to_owned(), 0x0c)));
-        assert_eq!(states[0].line_with_break(0x00, 0x0d, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d      |   •••••••••__•__".to_owned(), 0x0d)));
-        assert_eq!(states[0].line_with_break(0x00, 0x0e, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e   |   •••••••••__•__•".to_owned(), 0x0e)));
-        assert_eq!(states[0].line_with_break(0x00, 0x0f, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x00, 0x10, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x00, 0x11, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x00, 0x12, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x00, 0x00, false), Some(("    0   |00                                             |   •".to_owned(), 0x00)));
+        assert_eq!(states[0].line_with_break(0x00, 0x01, false), Some(("    0   |00 01                                          |   ••".to_owned(), 0x01)));
+        assert_eq!(states[0].line_with_break(0x00, 0x02, false), Some(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
+        assert_eq!(states[0].line_with_break(0x00, 0x03, false), Some(("    0   |00 01 02 03                                    |   ••••".to_owned(), 0x03)));
+        assert_eq!(states[0].line_with_break(0x00, 0x04, false), Some(("    0   |00 01 02 03 04                                 |   •••••".to_owned(), 0x04)));
+        assert_eq!(states[0].line_with_break(0x00, 0x05, false), Some(("    0   |00 01 02 03 04 05                              |   ••••••".to_owned(), 0x05)));
+        assert_eq!(states[0].line_with_break(0x00, 0x06, false), Some(("    0   |00 01 02 03 04 05 06                           |   •••••••".to_owned(), 0x06)));
+        assert_eq!(states[0].line_with_break(0x00, 0x07, false), Some(("    0   |00 01 02 03 04 05 06 07                        |   ••••••••".to_owned(), 0x07)));
+        assert_eq!(states[0].line_with_break(0x00, 0x08, false), Some(("    0   |00 01 02 03 04 05 06 07 08                     |   •••••••••".to_owned(), 0x08)));
+        assert_eq!(states[0].line_with_break(0x00, 0x09, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09                  |   •••••••••_".to_owned(), 0x09)));
+        assert_eq!(states[0].line_with_break(0x00, 0x0a, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a               |   •••••••••__".to_owned(), 0x0a)));
+        assert_eq!(states[0].line_with_break(0x00, 0x0b, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b            |   •••••••••__•".to_owned(), 0x0b)));
+        assert_eq!(states[0].line_with_break(0x00, 0x0c, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c         |   •••••••••__•_".to_owned(), 0x0c)));
+        assert_eq!(states[0].line_with_break(0x00, 0x0d, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d      |   •••••••••__•__".to_owned(), 0x0d)));
+        assert_eq!(states[0].line_with_break(0x00, 0x0e, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e   |   •••••••••__•__•".to_owned(), 0x0e)));
+        assert_eq!(states[0].line_with_break(0x00, 0x0f, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x00, 0x10, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x00, 0x11, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x00, 0x12, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
 
         /* too far */
-        assert_eq!(states[0].line_with_break(0x00, 0x13, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x00, 0x14, false), Ok(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x00, 0x13, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x00, 0x14, false), Some(("    0   |00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f|   •••••••••__•__••".to_owned(), 0x0f)));
 
-        assert_eq!(states[0].line_with_break(0x01, 0x14, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x01, 0x13, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x01, 0x12, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x01, 0x11, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x01, 0x10, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x01, 0x0f, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f   |   ••••••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x01, 0x0e, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e      |   ••••••••__•__•".to_owned(), 0x0e)));
-        assert_eq!(states[0].line_with_break(0x01, 0x0d, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d         |   ••••••••__•__".to_owned(), 0x0d)));
-        assert_eq!(states[0].line_with_break(0x01, 0x0c, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c            |   ••••••••__•_".to_owned(), 0x0c)));
-        assert_eq!(states[0].line_with_break(0x01, 0x0b, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a 0b               |   ••••••••__•".to_owned(), 0x0b)));
-        assert_eq!(states[0].line_with_break(0x01, 0x0a, false), Ok(("    1   |01 02 03 04 05 06 07 08 09 0a                  |   ••••••••__".to_owned(), 0x0a)));
-        assert_eq!(states[0].line_with_break(0x01, 0x09, false), Ok(("    1   |01 02 03 04 05 06 07 08 09                     |   ••••••••_".to_owned(), 0x09)));
-        assert_eq!(states[0].line_with_break(0x01, 0x08, false), Ok(("    1   |01 02 03 04 05 06 07 08                        |   ••••••••".to_owned(), 0x08)));
-        assert_eq!(states[0].line_with_break(0x01, 0x07, false), Ok(("    1   |01 02 03 04 05 06 07                           |   •••••••".to_owned(), 0x07)));
-        assert_eq!(states[0].line_with_break(0x01, 0x06, false), Ok(("    1   |01 02 03 04 05 06                              |   ••••••".to_owned(), 0x06)));
-        assert_eq!(states[0].line_with_break(0x01, 0x05, false), Ok(("    1   |01 02 03 04 05                                 |   •••••".to_owned(), 0x05)));
-        assert_eq!(states[0].line_with_break(0x01, 0x04, false), Ok(("    1   |01 02 03 04                                    |   ••••".to_owned(), 0x04)));
-        assert_eq!(states[0].line_with_break(0x01, 0x03, false), Ok(("    1   |01 02 03                                       |   •••".to_owned(), 0x03)));
-        assert_eq!(states[0].line_with_break(0x01, 0x02, false), Ok(("    1   |01 02                                          |   ••".to_owned(), 0x02)));
-        assert_eq!(states[0].line_with_break(0x01, 0x01, false), Ok(("    1   |01                                             |   •".to_owned(), 0x01)));
-        assert_eq!(states[0].line_with_break(0x01, 0x00, false), Err("No bytes in empty interval [1,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x01, 0x14, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x01, 0x13, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x01, 0x12, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x01, 0x11, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x01, 0x10, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10|   ••••••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x01, 0x0f, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f   |   ••••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x01, 0x0e, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e      |   ••••••••__•__•".to_owned(), 0x0e)));
+        assert_eq!(states[0].line_with_break(0x01, 0x0d, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c 0d         |   ••••••••__•__".to_owned(), 0x0d)));
+        assert_eq!(states[0].line_with_break(0x01, 0x0c, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b 0c            |   ••••••••__•_".to_owned(), 0x0c)));
+        assert_eq!(states[0].line_with_break(0x01, 0x0b, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a 0b               |   ••••••••__•".to_owned(), 0x0b)));
+        assert_eq!(states[0].line_with_break(0x01, 0x0a, false), Some(("    1   |01 02 03 04 05 06 07 08 09 0a                  |   ••••••••__".to_owned(), 0x0a)));
+        assert_eq!(states[0].line_with_break(0x01, 0x09, false), Some(("    1   |01 02 03 04 05 06 07 08 09                     |   ••••••••_".to_owned(), 0x09)));
+        assert_eq!(states[0].line_with_break(0x01, 0x08, false), Some(("    1   |01 02 03 04 05 06 07 08                        |   ••••••••".to_owned(), 0x08)));
+        assert_eq!(states[0].line_with_break(0x01, 0x07, false), Some(("    1   |01 02 03 04 05 06 07                           |   •••••••".to_owned(), 0x07)));
+        assert_eq!(states[0].line_with_break(0x01, 0x06, false), Some(("    1   |01 02 03 04 05 06                              |   ••••••".to_owned(), 0x06)));
+        assert_eq!(states[0].line_with_break(0x01, 0x05, false), Some(("    1   |01 02 03 04 05                                 |   •••••".to_owned(), 0x05)));
+        assert_eq!(states[0].line_with_break(0x01, 0x04, false), Some(("    1   |01 02 03 04                                    |   ••••".to_owned(), 0x04)));
+        assert_eq!(states[0].line_with_break(0x01, 0x03, false), Some(("    1   |01 02 03                                       |   •••".to_owned(), 0x03)));
+        assert_eq!(states[0].line_with_break(0x01, 0x02, false), Some(("    1   |01 02                                          |   ••".to_owned(), 0x02)));
+        assert_eq!(states[0].line_with_break(0x01, 0x01, false), Some(("    1   |01                                             |   •".to_owned(), 0x01)));
+        assert_eq!(states[0].line_with_break(0x01, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x02, 0x14, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x02, 0x13, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x02, 0x12, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x02, 0x11, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x02, 0x10, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10   |   •••••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x02, 0x0f, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f      |   •••••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x02, 0x0e, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e         |   •••••••__•__•".to_owned(), 0x0e)));
-        assert_eq!(states[0].line_with_break(0x02, 0x0d, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d            |   •••••••__•__".to_owned(), 0x0d)));
-        assert_eq!(states[0].line_with_break(0x02, 0x0c, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c               |   •••••••__•_".to_owned(), 0x0c)));
-        assert_eq!(states[0].line_with_break(0x02, 0x0b, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a 0b                  |   •••••••__•".to_owned(), 0x0b)));
-        assert_eq!(states[0].line_with_break(0x02, 0x0a, false), Ok(("    2   |02 03 04 05 06 07 08 09 0a                     |   •••••••__".to_owned(), 0x0a)));
-        assert_eq!(states[0].line_with_break(0x02, 0x09, false), Ok(("    2   |02 03 04 05 06 07 08 09                        |   •••••••_".to_owned(), 0x09)));
-        assert_eq!(states[0].line_with_break(0x02, 0x08, false), Ok(("    2   |02 03 04 05 06 07 08                           |   •••••••".to_owned(), 0x08)));
-        assert_eq!(states[0].line_with_break(0x02, 0x07, false), Ok(("    2   |02 03 04 05 06 07                              |   ••••••".to_owned(), 0x07)));
-        assert_eq!(states[0].line_with_break(0x02, 0x06, false), Ok(("    2   |02 03 04 05 06                                 |   •••••".to_owned(), 0x06)));
-        assert_eq!(states[0].line_with_break(0x02, 0x05, false), Ok(("    2   |02 03 04 05                                    |   ••••".to_owned(), 0x05)));
-        assert_eq!(states[0].line_with_break(0x02, 0x04, false), Ok(("    2   |02 03 04                                       |   •••".to_owned(), 0x04)));
-        assert_eq!(states[0].line_with_break(0x02, 0x03, false), Ok(("    2   |02 03                                          |   ••".to_owned(), 0x03)));
-        assert_eq!(states[0].line_with_break(0x02, 0x02, false), Ok(("    2   |02                                             |   •".to_owned(), 0x02)));
-        assert_eq!(states[0].line_with_break(0x02, 0x01, false), Err("No bytes in empty interval [2,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x02, 0x00, false), Err("No bytes in empty interval [2,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x02, 0x14, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x02, 0x13, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x02, 0x12, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x02, 0x11, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11|   •••••••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x02, 0x10, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10   |   •••••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x02, 0x0f, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f      |   •••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x02, 0x0e, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e         |   •••••••__•__•".to_owned(), 0x0e)));
+        assert_eq!(states[0].line_with_break(0x02, 0x0d, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c 0d            |   •••••••__•__".to_owned(), 0x0d)));
+        assert_eq!(states[0].line_with_break(0x02, 0x0c, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b 0c               |   •••••••__•_".to_owned(), 0x0c)));
+        assert_eq!(states[0].line_with_break(0x02, 0x0b, false), Some(("    2   |02 03 04 05 06 07 08 09 0a 0b                  |   •••••••__•".to_owned(), 0x0b)));
+        assert_eq!(states[0].line_with_break(0x02, 0x0a, false), Some(("    2   |02 03 04 05 06 07 08 09 0a                     |   •••••••__".to_owned(), 0x0a)));
+        assert_eq!(states[0].line_with_break(0x02, 0x09, false), Some(("    2   |02 03 04 05 06 07 08 09                        |   •••••••_".to_owned(), 0x09)));
+        assert_eq!(states[0].line_with_break(0x02, 0x08, false), Some(("    2   |02 03 04 05 06 07 08                           |   •••••••".to_owned(), 0x08)));
+        assert_eq!(states[0].line_with_break(0x02, 0x07, false), Some(("    2   |02 03 04 05 06 07                              |   ••••••".to_owned(), 0x07)));
+        assert_eq!(states[0].line_with_break(0x02, 0x06, false), Some(("    2   |02 03 04 05 06                                 |   •••••".to_owned(), 0x06)));
+        assert_eq!(states[0].line_with_break(0x02, 0x05, false), Some(("    2   |02 03 04 05                                    |   ••••".to_owned(), 0x05)));
+        assert_eq!(states[0].line_with_break(0x02, 0x04, false), Some(("    2   |02 03 04                                       |   •••".to_owned(), 0x04)));
+        assert_eq!(states[0].line_with_break(0x02, 0x03, false), Some(("    2   |02 03                                          |   ••".to_owned(), 0x03)));
+        assert_eq!(states[0].line_with_break(0x02, 0x02, false), Some(("    2   |02                                             |   •".to_owned(), 0x02)));
+        assert_eq!(states[0].line_with_break(0x02, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x02, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x03, 0x14, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12|   ••••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x03, 0x13, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12|   ••••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x03, 0x12, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12|   ••••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x03, 0x11, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11   |   ••••••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x03, 0x10, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10      |   ••••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x03, 0x0f, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f         |   ••••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x03, 0x0e, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e            |   ••••••__•__•".to_owned(), 0x0e)));
-        assert_eq!(states[0].line_with_break(0x03, 0x0d, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d               |   ••••••__•__".to_owned(), 0x0d)));
-        assert_eq!(states[0].line_with_break(0x03, 0x0c, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b 0c                  |   ••••••__•_".to_owned(), 0x0c)));
-        assert_eq!(states[0].line_with_break(0x03, 0x0b, false), Ok(("    3   |03 04 05 06 07 08 09 0a 0b                     |   ••••••__•".to_owned(), 0x0b)));
-        assert_eq!(states[0].line_with_break(0x03, 0x0a, false), Ok(("    3   |03 04 05 06 07 08 09 0a                        |   ••••••__".to_owned(), 0x0a)));
-        assert_eq!(states[0].line_with_break(0x03, 0x09, false), Ok(("    3   |03 04 05 06 07 08 09                           |   ••••••_".to_owned(), 0x09)));
-        assert_eq!(states[0].line_with_break(0x03, 0x08, false), Ok(("    3   |03 04 05 06 07 08                              |   ••••••".to_owned(), 0x08)));
-        assert_eq!(states[0].line_with_break(0x03, 0x07, false), Ok(("    3   |03 04 05 06 07                                 |   •••••".to_owned(), 0x07)));
-        assert_eq!(states[0].line_with_break(0x03, 0x06, false), Ok(("    3   |03 04 05 06                                    |   ••••".to_owned(), 0x06)));
-        assert_eq!(states[0].line_with_break(0x03, 0x05, false), Ok(("    3   |03 04 05                                       |   •••".to_owned(), 0x05)));
-        assert_eq!(states[0].line_with_break(0x03, 0x04, false), Ok(("    3   |03 04                                          |   ••".to_owned(), 0x04)));
-        assert_eq!(states[0].line_with_break(0x03, 0x03, false), Ok(("    3   |03                                             |   •".to_owned(), 0x03)));
-        assert_eq!(states[0].line_with_break(0x03, 0x02, false), Err("No bytes in empty interval [3,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x03, 0x01, false), Err("No bytes in empty interval [3,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x03, 0x00, false), Err("No bytes in empty interval [3,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x03, 0x14, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12|   ••••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x03, 0x13, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12|   ••••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x03, 0x12, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12|   ••••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x03, 0x11, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11   |   ••••••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x03, 0x10, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10      |   ••••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x03, 0x0f, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f         |   ••••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x03, 0x0e, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d 0e            |   ••••••__•__•".to_owned(), 0x0e)));
+        assert_eq!(states[0].line_with_break(0x03, 0x0d, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c 0d               |   ••••••__•__".to_owned(), 0x0d)));
+        assert_eq!(states[0].line_with_break(0x03, 0x0c, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b 0c                  |   ••••••__•_".to_owned(), 0x0c)));
+        assert_eq!(states[0].line_with_break(0x03, 0x0b, false), Some(("    3   |03 04 05 06 07 08 09 0a 0b                     |   ••••••__•".to_owned(), 0x0b)));
+        assert_eq!(states[0].line_with_break(0x03, 0x0a, false), Some(("    3   |03 04 05 06 07 08 09 0a                        |   ••••••__".to_owned(), 0x0a)));
+        assert_eq!(states[0].line_with_break(0x03, 0x09, false), Some(("    3   |03 04 05 06 07 08 09                           |   ••••••_".to_owned(), 0x09)));
+        assert_eq!(states[0].line_with_break(0x03, 0x08, false), Some(("    3   |03 04 05 06 07 08                              |   ••••••".to_owned(), 0x08)));
+        assert_eq!(states[0].line_with_break(0x03, 0x07, false), Some(("    3   |03 04 05 06 07                                 |   •••••".to_owned(), 0x07)));
+        assert_eq!(states[0].line_with_break(0x03, 0x06, false), Some(("    3   |03 04 05 06                                    |   ••••".to_owned(), 0x06)));
+        assert_eq!(states[0].line_with_break(0x03, 0x05, false), Some(("    3   |03 04 05                                       |   •••".to_owned(), 0x05)));
+        assert_eq!(states[0].line_with_break(0x03, 0x04, false), Some(("    3   |03 04                                          |   ••".to_owned(), 0x04)));
+        assert_eq!(states[0].line_with_break(0x03, 0x03, false), Some(("    3   |03                                             |   •".to_owned(), 0x03)));
+        assert_eq!(states[0].line_with_break(0x03, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x03, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x03, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x04, 0x14, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12   |   •••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x04, 0x13, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12   |   •••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x04, 0x12, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12   |   •••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x04, 0x11, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11      |   •••••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x04, 0x10, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10         |   •••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x04, 0x0f, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f            |   •••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x04, 0x0e, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e               |   •••••__•__•".to_owned(), 0x0e)));
-        assert_eq!(states[0].line_with_break(0x04, 0x0d, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c 0d                  |   •••••__•__".to_owned(), 0x0d)));
-        assert_eq!(states[0].line_with_break(0x04, 0x0c, false), Ok(("    4   |04 05 06 07 08 09 0a 0b 0c                     |   •••••__•_".to_owned(), 0x0c)));
-        assert_eq!(states[0].line_with_break(0x04, 0x0b, false), Ok(("    4   |04 05 06 07 08 09 0a 0b                        |   •••••__•".to_owned(), 0x0b)));
-        assert_eq!(states[0].line_with_break(0x04, 0x0a, false), Ok(("    4   |04 05 06 07 08 09 0a                           |   •••••__".to_owned(), 0x0a)));
-        assert_eq!(states[0].line_with_break(0x04, 0x09, false), Ok(("    4   |04 05 06 07 08 09                              |   •••••_".to_owned(), 0x09)));
-        assert_eq!(states[0].line_with_break(0x04, 0x08, false), Ok(("    4   |04 05 06 07 08                                 |   •••••".to_owned(), 0x08)));
-        assert_eq!(states[0].line_with_break(0x04, 0x07, false), Ok(("    4   |04 05 06 07                                    |   ••••".to_owned(), 0x07)));
-        assert_eq!(states[0].line_with_break(0x04, 0x06, false), Ok(("    4   |04 05 06                                       |   •••".to_owned(), 0x06)));
-        assert_eq!(states[0].line_with_break(0x04, 0x05, false), Ok(("    4   |04 05                                          |   ••".to_owned(), 0x05)));
-        assert_eq!(states[0].line_with_break(0x04, 0x04, false), Ok(("    4   |04                                             |   •".to_owned(), 0x04)));
-        assert_eq!(states[0].line_with_break(0x04, 0x03, false), Err("No bytes in empty interval [4,3]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x04, 0x02, false), Err("No bytes in empty interval [4,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x04, 0x01, false), Err("No bytes in empty interval [4,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x04, 0x00, false), Err("No bytes in empty interval [4,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x04, 0x14, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12   |   •••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x04, 0x13, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12   |   •••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x04, 0x12, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12   |   •••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x04, 0x11, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11      |   •••••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x04, 0x10, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10         |   •••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x04, 0x0f, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e 0f            |   •••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x04, 0x0e, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d 0e               |   •••••__•__•".to_owned(), 0x0e)));
+        assert_eq!(states[0].line_with_break(0x04, 0x0d, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c 0d                  |   •••••__•__".to_owned(), 0x0d)));
+        assert_eq!(states[0].line_with_break(0x04, 0x0c, false), Some(("    4   |04 05 06 07 08 09 0a 0b 0c                     |   •••••__•_".to_owned(), 0x0c)));
+        assert_eq!(states[0].line_with_break(0x04, 0x0b, false), Some(("    4   |04 05 06 07 08 09 0a 0b                        |   •••••__•".to_owned(), 0x0b)));
+        assert_eq!(states[0].line_with_break(0x04, 0x0a, false), Some(("    4   |04 05 06 07 08 09 0a                           |   •••••__".to_owned(), 0x0a)));
+        assert_eq!(states[0].line_with_break(0x04, 0x09, false), Some(("    4   |04 05 06 07 08 09                              |   •••••_".to_owned(), 0x09)));
+        assert_eq!(states[0].line_with_break(0x04, 0x08, false), Some(("    4   |04 05 06 07 08                                 |   •••••".to_owned(), 0x08)));
+        assert_eq!(states[0].line_with_break(0x04, 0x07, false), Some(("    4   |04 05 06 07                                    |   ••••".to_owned(), 0x07)));
+        assert_eq!(states[0].line_with_break(0x04, 0x06, false), Some(("    4   |04 05 06                                       |   •••".to_owned(), 0x06)));
+        assert_eq!(states[0].line_with_break(0x04, 0x05, false), Some(("    4   |04 05                                          |   ••".to_owned(), 0x05)));
+        assert_eq!(states[0].line_with_break(0x04, 0x04, false), Some(("    4   |04                                             |   •".to_owned(), 0x04)));
+        assert_eq!(states[0].line_with_break(0x04, 0x03, false), None);
+        assert_eq!(states[0].line_with_break(0x04, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x04, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x04, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x05, 0x14, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12      |   ••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x05, 0x13, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12      |   ••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x05, 0x12, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12      |   ••••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x05, 0x11, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11         |   ••••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x05, 0x10, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10            |   ••••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x05, 0x0f, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f               |   ••••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x05, 0x0e, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e                  |   ••••__•__•".to_owned(), 0x0e)));
-        assert_eq!(states[0].line_with_break(0x05, 0x0d, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c 0d                     |   ••••__•__".to_owned(), 0x0d)));
-        assert_eq!(states[0].line_with_break(0x05, 0x0c, false), Ok(("    5   |05 06 07 08 09 0a 0b 0c                        |   ••••__•_".to_owned(), 0x0c)));
-        assert_eq!(states[0].line_with_break(0x05, 0x0b, false), Ok(("    5   |05 06 07 08 09 0a 0b                           |   ••••__•".to_owned(), 0x0b)));
-        assert_eq!(states[0].line_with_break(0x05, 0x0a, false), Ok(("    5   |05 06 07 08 09 0a                              |   ••••__".to_owned(), 0x0a)));
-        assert_eq!(states[0].line_with_break(0x05, 0x09, false), Ok(("    5   |05 06 07 08 09                                 |   ••••_".to_owned(), 0x09)));
-        assert_eq!(states[0].line_with_break(0x05, 0x08, false), Ok(("    5   |05 06 07 08                                    |   ••••".to_owned(), 0x08)));
-        assert_eq!(states[0].line_with_break(0x05, 0x07, false), Ok(("    5   |05 06 07                                       |   •••".to_owned(), 0x07)));
-        assert_eq!(states[0].line_with_break(0x05, 0x06, false), Ok(("    5   |05 06                                          |   ••".to_owned(), 0x06)));
-        assert_eq!(states[0].line_with_break(0x05, 0x05, false), Ok(("    5   |05                                             |   •".to_owned(), 0x05)));
-        assert_eq!(states[0].line_with_break(0x05, 0x04, false), Err("No bytes in empty interval [5,4]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x05, 0x03, false), Err("No bytes in empty interval [5,3]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x05, 0x02, false), Err("No bytes in empty interval [5,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x05, 0x01, false), Err("No bytes in empty interval [5,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x05, 0x00, false), Err("No bytes in empty interval [5,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x05, 0x14, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12      |   ••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x05, 0x13, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12      |   ••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x05, 0x12, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12      |   ••••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x05, 0x11, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11         |   ••••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x05, 0x10, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f 10            |   ••••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x05, 0x0f, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e 0f               |   ••••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x05, 0x0e, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d 0e                  |   ••••__•__•".to_owned(), 0x0e)));
+        assert_eq!(states[0].line_with_break(0x05, 0x0d, false), Some(("    5   |05 06 07 08 09 0a 0b 0c 0d                     |   ••••__•__".to_owned(), 0x0d)));
+        assert_eq!(states[0].line_with_break(0x05, 0x0c, false), Some(("    5   |05 06 07 08 09 0a 0b 0c                        |   ••••__•_".to_owned(), 0x0c)));
+        assert_eq!(states[0].line_with_break(0x05, 0x0b, false), Some(("    5   |05 06 07 08 09 0a 0b                           |   ••••__•".to_owned(), 0x0b)));
+        assert_eq!(states[0].line_with_break(0x05, 0x0a, false), Some(("    5   |05 06 07 08 09 0a                              |   ••••__".to_owned(), 0x0a)));
+        assert_eq!(states[0].line_with_break(0x05, 0x09, false), Some(("    5   |05 06 07 08 09                                 |   ••••_".to_owned(), 0x09)));
+        assert_eq!(states[0].line_with_break(0x05, 0x08, false), Some(("    5   |05 06 07 08                                    |   ••••".to_owned(), 0x08)));
+        assert_eq!(states[0].line_with_break(0x05, 0x07, false), Some(("    5   |05 06 07                                       |   •••".to_owned(), 0x07)));
+        assert_eq!(states[0].line_with_break(0x05, 0x06, false), Some(("    5   |05 06                                          |   ••".to_owned(), 0x06)));
+        assert_eq!(states[0].line_with_break(0x05, 0x05, false), Some(("    5   |05                                             |   •".to_owned(), 0x05)));
+        assert_eq!(states[0].line_with_break(0x05, 0x04, false), None);
+        assert_eq!(states[0].line_with_break(0x05, 0x03, false), None);
+        assert_eq!(states[0].line_with_break(0x05, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x05, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x05, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x06, 0x14, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12         |   •••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x06, 0x13, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12         |   •••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x06, 0x12, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12         |   •••__•__•••••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x06, 0x11, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11            |   •••__•__••••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x06, 0x10, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10               |   •••__•__•••".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x06, 0x0f, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f                  |   •••__•__••".to_owned(), 0x0f)));
-        assert_eq!(states[0].line_with_break(0x06, 0x0e, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d 0e                     |   •••__•__•".to_owned(), 0x0e)));
-        assert_eq!(states[0].line_with_break(0x06, 0x0d, false), Ok(("    6   |06 07 08 09 0a 0b 0c 0d                        |   •••__•__".to_owned(), 0x0d)));
-        assert_eq!(states[0].line_with_break(0x06, 0x0c, false), Ok(("    6   |06 07 08 09 0a 0b 0c                           |   •••__•_".to_owned(), 0x0c)));
-        assert_eq!(states[0].line_with_break(0x06, 0x0b, false), Ok(("    6   |06 07 08 09 0a 0b                              |   •••__•".to_owned(), 0x0b)));
-        assert_eq!(states[0].line_with_break(0x06, 0x0a, false), Ok(("    6   |06 07 08 09 0a                                 |   •••__".to_owned(), 0x0a)));
-        assert_eq!(states[0].line_with_break(0x06, 0x09, false), Ok(("    6   |06 07 08 09                                    |   •••_".to_owned(), 0x09)));
-        assert_eq!(states[0].line_with_break(0x06, 0x08, false), Ok(("    6   |06 07 08                                       |   •••".to_owned(), 0x08)));
-        assert_eq!(states[0].line_with_break(0x06, 0x07, false), Ok(("    6   |06 07                                          |   ••".to_owned(), 0x07)));
-        assert_eq!(states[0].line_with_break(0x06, 0x06, false), Ok(("    6   |06                                             |   •".to_owned(), 0x06)));
-        assert_eq!(states[0].line_with_break(0x06, 0x05, false), Err("No bytes in empty interval [6,5]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x06, 0x04, false), Err("No bytes in empty interval [6,4]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x06, 0x03, false), Err("No bytes in empty interval [6,3]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x06, 0x02, false), Err("No bytes in empty interval [6,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x06, 0x01, false), Err("No bytes in empty interval [6,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x06, 0x00, false), Err("No bytes in empty interval [6,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x06, 0x14, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12         |   •••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x06, 0x13, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12         |   •••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x06, 0x12, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12         |   •••__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x06, 0x11, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10 11            |   •••__•__••••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x06, 0x10, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f 10               |   •••__•__•••".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x06, 0x0f, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d 0e 0f                  |   •••__•__••".to_owned(), 0x0f)));
+        assert_eq!(states[0].line_with_break(0x06, 0x0e, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d 0e                     |   •••__•__•".to_owned(), 0x0e)));
+        assert_eq!(states[0].line_with_break(0x06, 0x0d, false), Some(("    6   |06 07 08 09 0a 0b 0c 0d                        |   •••__•__".to_owned(), 0x0d)));
+        assert_eq!(states[0].line_with_break(0x06, 0x0c, false), Some(("    6   |06 07 08 09 0a 0b 0c                           |   •••__•_".to_owned(), 0x0c)));
+        assert_eq!(states[0].line_with_break(0x06, 0x0b, false), Some(("    6   |06 07 08 09 0a 0b                              |   •••__•".to_owned(), 0x0b)));
+        assert_eq!(states[0].line_with_break(0x06, 0x0a, false), Some(("    6   |06 07 08 09 0a                                 |   •••__".to_owned(), 0x0a)));
+        assert_eq!(states[0].line_with_break(0x06, 0x09, false), Some(("    6   |06 07 08 09                                    |   •••_".to_owned(), 0x09)));
+        assert_eq!(states[0].line_with_break(0x06, 0x08, false), Some(("    6   |06 07 08                                       |   •••".to_owned(), 0x08)));
+        assert_eq!(states[0].line_with_break(0x06, 0x07, false), Some(("    6   |06 07                                          |   ••".to_owned(), 0x07)));
+        assert_eq!(states[0].line_with_break(0x06, 0x06, false), Some(("    6   |06                                             |   •".to_owned(), 0x06)));
+        assert_eq!(states[0].line_with_break(0x06, 0x05, false), None);
+        assert_eq!(states[0].line_with_break(0x06, 0x04, false), None);
+        assert_eq!(states[0].line_with_break(0x06, 0x03, false), None);
+        assert_eq!(states[0].line_with_break(0x06, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x06, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x06, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x10, 0x14, false), Ok(("   10   |10 11 12                                       |   •••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x10, 0x13, false), Ok(("   10   |10 11 12                                       |   •••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x10, 0x12, false), Ok(("   10   |10 11 12                                       |   •••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x10, 0x11, false), Ok(("   10   |10 11                                          |   ••".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x10, 0x10, false), Ok(("   10   |10                                             |   •".to_owned(), 0x10)));
-        assert_eq!(states[0].line_with_break(0x10, 0x0f, false), Err("No bytes in empty interval [16,15]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x0e, false), Err("No bytes in empty interval [16,14]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x0d, false), Err("No bytes in empty interval [16,13]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x0c, false), Err("No bytes in empty interval [16,12]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x0b, false), Err("No bytes in empty interval [16,11]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x0a, false), Err("No bytes in empty interval [16,10]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x09, false), Err("No bytes in empty interval [16,9]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x08, false), Err("No bytes in empty interval [16,8]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x07, false), Err("No bytes in empty interval [16,7]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x06, false), Err("No bytes in empty interval [16,6]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x05, false), Err("No bytes in empty interval [16,5]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x04, false), Err("No bytes in empty interval [16,4]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x03, false), Err("No bytes in empty interval [16,3]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x02, false), Err("No bytes in empty interval [16,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x01, false), Err("No bytes in empty interval [16,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x10, 0x00, false), Err("No bytes in empty interval [16,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x10, 0x14, false), Some(("   10   |10 11 12                                       |   •••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x10, 0x13, false), Some(("   10   |10 11 12                                       |   •••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x10, 0x12, false), Some(("   10   |10 11 12                                       |   •••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x10, 0x11, false), Some(("   10   |10 11                                          |   ••".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x10, 0x10, false), Some(("   10   |10                                             |   •".to_owned(), 0x10)));
+        assert_eq!(states[0].line_with_break(0x10, 0x0f, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x0e, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x0d, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x0c, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x0b, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x0a, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x09, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x08, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x07, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x06, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x05, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x04, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x03, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x10, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x11, 0x14, false), Ok(("   11   |11 12                                          |   ••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x11, 0x13, false), Ok(("   11   |11 12                                          |   ••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x11, 0x12, false), Ok(("   11   |11 12                                          |   ••".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x11, 0x11, false), Ok(("   11   |11                                             |   •".to_owned(), 0x11)));
-        assert_eq!(states[0].line_with_break(0x11, 0x10, false), Err("No bytes in empty interval [17,16]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x0f, false), Err("No bytes in empty interval [17,15]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x0e, false), Err("No bytes in empty interval [17,14]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x0d, false), Err("No bytes in empty interval [17,13]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x0c, false), Err("No bytes in empty interval [17,12]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x0b, false), Err("No bytes in empty interval [17,11]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x0a, false), Err("No bytes in empty interval [17,10]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x09, false), Err("No bytes in empty interval [17,9]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x08, false), Err("No bytes in empty interval [17,8]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x07, false), Err("No bytes in empty interval [17,7]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x06, false), Err("No bytes in empty interval [17,6]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x05, false), Err("No bytes in empty interval [17,5]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x04, false), Err("No bytes in empty interval [17,4]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x03, false), Err("No bytes in empty interval [17,3]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x02, false), Err("No bytes in empty interval [17,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x01, false), Err("No bytes in empty interval [17,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x11, 0x00, false), Err("No bytes in empty interval [17,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x11, 0x14, false), Some(("   11   |11 12                                          |   ••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x11, 0x13, false), Some(("   11   |11 12                                          |   ••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x11, 0x12, false), Some(("   11   |11 12                                          |   ••".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x11, 0x11, false), Some(("   11   |11                                             |   •".to_owned(), 0x11)));
+        assert_eq!(states[0].line_with_break(0x11, 0x10, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x0f, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x0e, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x0d, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x0c, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x0b, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x0a, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x09, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x08, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x07, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x06, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x05, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x04, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x03, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x11, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x12, 0x14, false), Ok(("   12   |12                                             |   •".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x12, 0x13, false), Ok(("   12   |12                                             |   •".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x12, 0x12, false), Ok(("   12   |12                                             |   •".to_owned(), 0x12)));
-        assert_eq!(states[0].line_with_break(0x12, 0x11, false), Err("No bytes in empty interval [18,17]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x10, false), Err("No bytes in empty interval [18,16]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x0f, false), Err("No bytes in empty interval [18,15]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x0e, false), Err("No bytes in empty interval [18,14]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x0d, false), Err("No bytes in empty interval [18,13]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x0c, false), Err("No bytes in empty interval [18,12]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x0b, false), Err("No bytes in empty interval [18,11]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x0a, false), Err("No bytes in empty interval [18,10]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x09, false), Err("No bytes in empty interval [18,9]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x08, false), Err("No bytes in empty interval [18,8]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x07, false), Err("No bytes in empty interval [18,7]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x06, false), Err("No bytes in empty interval [18,6]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x05, false), Err("No bytes in empty interval [18,5]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x04, false), Err("No bytes in empty interval [18,4]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x03, false), Err("No bytes in empty interval [18,3]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x02, false), Err("No bytes in empty interval [18,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x01, false), Err("No bytes in empty interval [18,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x12, 0x00, false), Err("No bytes in empty interval [18,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x12, 0x14, false), Some(("   12   |12                                             |   •".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x12, 0x13, false), Some(("   12   |12                                             |   •".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x12, 0x12, false), Some(("   12   |12                                             |   •".to_owned(), 0x12)));
+        assert_eq!(states[0].line_with_break(0x12, 0x11, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x10, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x0f, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x0e, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x0d, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x0c, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x0b, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x0a, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x09, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x08, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x07, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x06, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x05, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x04, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x03, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x12, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x13, 0x14, false), Err("19 is past the last byte (18)".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x13, false), Err("19 is past the last byte (18)".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x12, false), Err("No bytes in empty interval [19,18]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x11, false), Err("No bytes in empty interval [19,17]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x10, false), Err("No bytes in empty interval [19,16]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x0f, false), Err("No bytes in empty interval [19,15]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x0e, false), Err("No bytes in empty interval [19,14]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x0d, false), Err("No bytes in empty interval [19,13]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x0c, false), Err("No bytes in empty interval [19,12]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x0b, false), Err("No bytes in empty interval [19,11]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x0a, false), Err("No bytes in empty interval [19,10]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x09, false), Err("No bytes in empty interval [19,9]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x08, false), Err("No bytes in empty interval [19,8]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x07, false), Err("No bytes in empty interval [19,7]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x06, false), Err("No bytes in empty interval [19,6]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x05, false), Err("No bytes in empty interval [19,5]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x04, false), Err("No bytes in empty interval [19,4]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x03, false), Err("No bytes in empty interval [19,3]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x02, false), Err("No bytes in empty interval [19,2]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x01, false), Err("No bytes in empty interval [19,1]".to_owned()));
-        assert_eq!(states[0].line_with_break(0x13, 0x00, false), Err("No bytes in empty interval [19,0]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x13, 0x14, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x13, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x12, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x11, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x10, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x0f, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x0e, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x0d, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x0c, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x0b, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x0a, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x09, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x08, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x07, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x06, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x05, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x04, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x03, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x02, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x01, false), None);
+        assert_eq!(states[0].line_with_break(0x13, 0x00, false), None);
 
-        assert_eq!(states[0].line_with_break(0x14, 0x14, false), Err("20 is past the last byte (18)".to_owned()));
-        assert_eq!(states[0].line_with_break(0x14, 0x13, false), Err("No bytes in empty interval [20,19]".to_owned()));
+        assert_eq!(states[0].line_with_break(0x14, 0x14, false), None);
+        assert_eq!(states[0].line_with_break(0x14, 0x13, false), None);
 
         states.push(State {
             prefs: Preferences {
                 radix: 16,
                 show_byte_numbers: true,
-                underline_main_bytes: true,
+                underline_main_line: true,
                 show_chars: true,
                 show_prompt: true,
                 color: false,
@@ -1515,29 +1517,29 @@ mod tests {
             last_search: None,
             filename: "filename".to_owned(),
             index: 0,
-            breaks: vec![3, 8],
+            breaks: HashSet::from([3, 8]),
             all_bytes: vec![
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
                 0x10, 0x11, 0x12,
             ],
         });
 
-        assert_eq!(states[1].line_with_break(0x00, 0x00, false), Ok(("    0   |00                                             |   •".to_owned(), 0x00)));
-        assert_eq!(states[1].line_with_break(0x00, 0x01, false), Ok(("    0   |00 01                                          |   ••".to_owned(), 0x01)));
-        assert_eq!(states[1].line_with_break(0x00, 0x02, false), Ok(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
-        assert_eq!(states[1].line_with_break(0x00, 0x03, false), Ok(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
-        assert_eq!(states[1].line_with_break(0x00, 0x04, false), Ok(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
-        assert_eq!(states[1].line_with_break(0x00, 0x100, false), Ok(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
+        assert_eq!(states[1].line_with_break(0x00, 0x00, false), Some(("    0   |00                                             |   •".to_owned(), 0x00)));
+        assert_eq!(states[1].line_with_break(0x00, 0x01, false), Some(("    0   |00 01                                          |   ••".to_owned(), 0x01)));
+        assert_eq!(states[1].line_with_break(0x00, 0x02, false), Some(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
+        assert_eq!(states[1].line_with_break(0x00, 0x03, false), Some(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
+        assert_eq!(states[1].line_with_break(0x00, 0x04, false), Some(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
+        assert_eq!(states[1].line_with_break(0x00, 0x100, false), Some(("    0   |00 01 02                                       |   •••".to_owned(), 0x02)));
 
-        assert_eq!(states[1].line_with_break(0x01, 0x0a, false), Ok(("    1   |01 02                                          |   ••".to_owned(), 0x02)));
-        assert_eq!(states[1].line_with_break(0x02, 0x0a, false), Ok(("    2   |02                                             |   •".to_owned(), 0x02)));
-        assert_eq!(states[1].line_with_break(0x03, 0x0a, false), Ok(("    3   |03 04 05 06 07                                 |   •••••".to_owned(), 0x07)));
-        assert_eq!(states[1].line_with_break(0x04, 0x0a, false), Ok(("    4   |04 05 06 07                                    |   ••••".to_owned(), 0x07)));
-        assert_eq!(states[1].line_with_break(0x05, 0x0a, false), Ok(("    5   |05 06 07                                       |   •••".to_owned(), 0x07)));
-        assert_eq!(states[1].line_with_break(0x06, 0x0a, false), Ok(("    6   |06 07                                          |   ••".to_owned(), 0x07)));
-        assert_eq!(states[1].line_with_break(0x07, 0x0a, false), Ok(("    7   |07                                             |   •".to_owned(), 0x07)));
-        assert_eq!(states[1].line_with_break(0x08, 0x0a, false), Ok(("    8   |08 09 0a                                       |   •__".to_owned(), 0x0a)));
-        assert_eq!(states[1].line_with_break(0x08, 0x100, false), Ok(("    8   |08 09 0a 0b 0c 0d 0e 0f 10 11 12               |   •__•__•••••".to_owned(), 0x12)));
+        assert_eq!(states[1].line_with_break(0x01, 0x0a, false), Some(("    1   |01 02                                          |   ••".to_owned(), 0x02)));
+        assert_eq!(states[1].line_with_break(0x02, 0x0a, false), Some(("    2   |02                                             |   •".to_owned(), 0x02)));
+        assert_eq!(states[1].line_with_break(0x03, 0x0a, false), Some(("    3   |03 04 05 06 07                                 |   •••••".to_owned(), 0x07)));
+        assert_eq!(states[1].line_with_break(0x04, 0x0a, false), Some(("    4   |04 05 06 07                                    |   ••••".to_owned(), 0x07)));
+        assert_eq!(states[1].line_with_break(0x05, 0x0a, false), Some(("    5   |05 06 07                                       |   •••".to_owned(), 0x07)));
+        assert_eq!(states[1].line_with_break(0x06, 0x0a, false), Some(("    6   |06 07                                          |   ••".to_owned(), 0x07)));
+        assert_eq!(states[1].line_with_break(0x07, 0x0a, false), Some(("    7   |07                                             |   •".to_owned(), 0x07)));
+        assert_eq!(states[1].line_with_break(0x08, 0x0a, false), Some(("    8   |08 09 0a                                       |   •__".to_owned(), 0x0a)));
+        assert_eq!(states[1].line_with_break(0x08, 0x100, false), Some(("    8   |08 09 0a 0b 0c 0d 0e 0f 10 11 12               |   •__•__•••••".to_owned(), 0x12)));
     }
 
 
@@ -1545,6 +1547,7 @@ mod tests {
     fn test_byte_numbers() {
         let mut state = State {
             prefs: Preferences {
+                underline_main_line: true,
                 radix: 16,
                 show_byte_numbers: true,
                 show_chars: true,
@@ -1560,7 +1563,7 @@ mod tests {
             last_search: None,
             filename: "filename".to_owned(),
             index: 0,
-            breaks: Vec::new(),
+            breaks: HashSet::new(),
             all_bytes: vec![
                 0x00, 0x01, 0x02,
                 0x03, 0x04, 0x05,
