@@ -797,7 +797,7 @@ impl State {
         let mut cursor = self.index.saturating_sub(
                 self.prefs.before_context * usize::from(self.prefs.width));
         loop {
-            let mut last_byte_collected = None; 
+            let last_byte_collected;
 
             if let Some((line, last_byte_index)) =
                 self.line_with_break(cursor, prev_byte, false) {
