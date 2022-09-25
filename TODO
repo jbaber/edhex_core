@@ -1,0 +1,1 @@
+Make all_bytes private so that all changes have to be made through accessors.  That way accessors can update visual breaks appropriately.
