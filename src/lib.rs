@@ -365,9 +365,11 @@ impl Preferences {
             Err(format!("Couldn't read {}", path.display()))
         }
     }
+}
 
 
-    pub fn default() -> Self {
+impl Default for Preferences {
+    fn default() -> Self {
         Self {
             radix: 16,
             show_byte_numbers: true,
@@ -385,6 +387,7 @@ impl Preferences {
 }
 
 
+#[derive(Default)]
 pub struct State {
     pub prefs: Preferences,
     pub unsaved_changes: bool,
@@ -396,7 +399,7 @@ pub struct State {
     pub index: usize,
 
     /* The bytes in memory */
-    pub all_bytes: Vec<u8>,
+    all_bytes: Vec<u8>,
 
     /* Bytes at which to insert a break when displaying */
     pub breaks: HashSet<usize>,
@@ -494,6 +497,27 @@ impl State {
         }
     }
 
+    /// Visual breaks will be lost
+    /// TODO error when annotations are present
+    pub fn set_bytes(&mut self, new_bytes:Vec<u8>) -> Result<(), String> {
+        self.breaks = HashSet::new();
+        self.all_bytes = new_bytes;
+        Ok(())
+    }
+
+    pub fn get_bytes(&self) -> &Vec<u8> {
+        &self.all_bytes
+    }
+
+    /// TODO update visual break locations
+    pub fn kill_range(&mut self, range:(usize, usize)) -> Result<(), String> {
+        let mut right_half = self.all_bytes.split_off(range.0);
+        right_half = right_half.split_off(range.1 - range.0 + 1);
+        self.all_bytes.append(&mut right_half);
+        self.index = range.0;
+        self.unsaved_changes = true;
+        Ok(())
+    }
 
     /// Return the byte numbers necessary for the left column of a display
     pub fn addresses(&self, from:usize) -> Vec<usize> {
